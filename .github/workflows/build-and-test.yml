@@ -51,7 +51,7 @@ jobs:
           - shell: 'bash -eo pipefail {0}'
 
           # Overrides for the defaults
-          - shell: 'C:\Program Files\PowerShell\7\pwsh.EXE -command ". ''{0}''"'
+          - shell: 'C:\Program Files\PowerShell\7\pwsh.EXE -command ''{0}'''
             os: windows-latest
 
     runs-on: ${{ matrix.os }}
