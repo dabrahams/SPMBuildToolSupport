@@ -151,7 +151,7 @@ extension PortableBuildToolPlugin {
 
 }
 
-public extension PortableBuildCommand.Tool {
+public extension PortableBuildCommand.Executable {
 
   /// A partial translation to SPM plugin inputs of an invocation.
   struct SPMInvocation {
@@ -169,7 +169,7 @@ public extension PortableBuildCommand.Tool {
     case .preInstalled(file: let pathToExecutable):
       return .init(executable: pathToExecutable.portable, argumentPrefix: [], additionalSources: [])
 
-    case .executableProduct(name: let productName):
+    case .targetInThisPackage(name: let productName):
       #if !os(Windows)
       return try .init(
         executable: context.tool(named: productName).path.portable,
@@ -178,7 +178,7 @@ public extension PortableBuildCommand.Tool {
       // Instead of depending on context.tool(named:), which demands a declared dependency on the
       // tool, which causes link errors on Windows
       // (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716),
-      // Invoke swift reentrantly to run the GenerateResoure tool.
+      // Invoke swift reentrantly to run the tool.
 
       //
       // If a likely candidate for the current toolchain can be found in the `Path`, prepend its
@@ -246,14 +246,14 @@ fileprivate extension PortableBuildCommand {
     switch self {
     case .buildCommand(
            displayName: let displayName,
-           tool: let tool,
+           executable: let executable,
            arguments: let arguments,
            environment: let environment,
            inputFiles: let inputFiles,
            outputFiles: let outputFiles,
            pluginSourceFile: let pluginSourceFile):
 
-      let i = try tool.spmInvocation(in: context)
+      let i = try executable.spmInvocation(in: context)
 
       /// Guess at files that constitute this plugin, the changing of which should cause outputs to be
       /// regenerated (workaround for https://github.com/apple/swift-package-manager/issues/6936).
@@ -274,7 +274,7 @@ fileprivate extension PortableBuildCommand {
 
     case .prebuildCommand(
            displayName: let displayName,
-           tool: let tool,
+           executable: let tool,
            arguments: let arguments,
            environment: let environment,
            outputFilesDirectory: let outputFilesDirectory):
@@ -297,10 +297,10 @@ fileprivate extension PortableBuildCommand {
 public enum PortableBuildCommand {
 
   /// A command-line tool to be invoked.
-  public enum Tool {
+  public enum Executable {
 
-    /// The executable product named `name` in this package
-    case executableProduct(name: String)
+    /// The executable target named `name` in this package
+    case targetInThisPackage(name: String)
 
     /// The executable at `file`, an absolute path outside the build directory of the package being
     /// built.
@@ -320,8 +320,8 @@ public enum PortableBuildCommand {
   /// - Parameters:
   ///   - displayName: An optional string to show in build logs and other
   ///     status areas.
-  ///   - tool: The command-line tool invoked to build the output files.
-  ///   - arguments: Command-line arguments to be passed to the tool.
+  ///   - executable: The executable invoked to build the output files.
+  ///   - arguments: Command-line arguments to be passed to the executable.
   ///   - environment: Environment variable assignments visible to the
   ///     tool.
   ///   - inputFiles: Files on which the contents of output files may depend.
@@ -337,7 +337,7 @@ public enum PortableBuildCommand {
   ///     default to take effect.
   case buildCommand(
         displayName: String?,
-        tool: Tool,
+        executable: Executable,
         arguments: [String],
         environment: [String: String] = [:],
         inputFiles: [Path] = [],
@@ -359,7 +359,7 @@ public enum PortableBuildCommand {
   /// - Parameters:
   ///   - displayName: An optional string to show in build logs and other
   ///     status areas.
-  ///   - tool: The command-line tool invoked to build the output files.
+  ///   - executable: The executable invoked to build the output files.
   ///   - arguments: Command-line arguments to be passed to the tool.
   ///   - environment: Environment variable assignments visible to the tool.
   ///   - workingDirectory: Optional initial working directory when the tool
@@ -372,7 +372,7 @@ public enum PortableBuildCommand {
   ///     `Package.swift` using `.process(...)`.
   case prebuildCommand(
          displayName: String?,
-         tool: Tool,
+         executable: Executable,
          arguments: [String],
          environment: [String: String] = [:],
          outputFilesDirectory: Path)

@@ -23,7 +23,7 @@ struct ResourceGeneratorPlugin: PortableBuildToolPlugin {
     return [
       .buildCommand(
         displayName: "Running converter",
-        tool: .executableProduct(name: "GenerateResource"),
+        executable: .targetInThisPackage(name: "GenerateResource"),
         // Note the use of `.platformString` on these paths rather
         // than `.string`.  Your executable tool may have trouble
         // finding files and directories with `.string`.
