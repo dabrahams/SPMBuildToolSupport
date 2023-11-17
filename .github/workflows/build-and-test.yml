@@ -56,8 +56,14 @@ jobs:
           }
         ]
         os: [macos-latest, ubuntu-latest, windows-latest]
-        swift: [{version: "5.8"}]
         configuration: [debug]
+        include:
+          - swift:
+              version: '5.8'
+
+          - os: windows-latest
+            swift:
+              version: '5.6'
 
     runs-on: ${{ matrix.os }}
     steps:
