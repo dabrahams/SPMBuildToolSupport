@@ -42,33 +42,33 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
+
         configuration: [debug]
+
+        defaults:
+          - { os: windows-latest }
+          - { run: { shell: 'bash -eo pipefail {0}' } }
+
         include:
           # Default values to add
-          - job-defaults:
-              run:
-                shell: bash -eo pipefail {0}
-
-            setup-swift:
+          - setup-swift:
               action: swift-actions/setup-swift@v1
               with:
                 swift-version: '5.8'
 
           # Overrides for the defaults
-          - os: windows-latest
-
-            job-defaults: []
-
-            setup-swift:
+          - setup-swift:
               action: compnerd/gha-setup-swift@main
               with:
                 github-repo: thebrowsercompany/swift-build
                 release-asset-name: installer-amd64.exe
                 release-tag-name: 20231010.3
-                github-token: ${{ secrets.GITHUB_TOKEN }}
+            os: windows-latest
 
-    defaults: ${{ matrix.job-defaults }}
     runs-on: ${{ matrix.os }}
+
+    defaults: ${{ matrix.defaults }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
