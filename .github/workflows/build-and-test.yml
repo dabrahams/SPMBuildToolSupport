@@ -52,13 +52,15 @@ jobs:
         include:
           # Default values to add
           - setup-swift:
-              action: 'swift-actions/setup-swift@v1'
+              name: Setup Swift
+              uses: 'swift-actions/setup-swift@v1'
               with:
                 swift-version: '5.8'
 
           # Overrides for the defaults
           - setup-swift:
-              action: 'compnerd/gha-setup-swift@main'
+              name: Setup Swift
+              uses: 'compnerd/gha-setup-swift@main'
               with:
                 github-repo: thebrowsercompany/swift-build
                 release-asset-name: installer-amd64.exe
@@ -73,9 +75,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup swift
-        uses: ${{ matrix.setup-swift.action }}
-        with: ${{ matrix.setup-swift.with }}
+      - ${{ matrix.setup-swift }}
 
       - name: Build and Test (${{ matrix.configuration }})
         run: swift test -c ${{ matrix.configuration }}
