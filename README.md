@@ -22,4 +22,4 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
 4. Avoid naïve path manipulations on a `PackagePlugin.Path` directly, which is buggy on some platforms.  Consider using its `url` property and then, if necessary, converting the result back to a `PackagePlugin.Path`.
 5. **On Windows**:
    - In `Package.swift`, omit executable targets in your package from the list of your build tool's dependencies.
-   - To speed up builds, set `SPMBuildToolSupport_NO_REENTRANT_BUILD=1` in your environment, but always build the targets you omitted above *before* anything that depends on the build tools.  There are examples of how this works in this project's tests.
+   - To speed up builds, set `SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD=1` in your environment, but always build the targets you omitted above *before* anything that depends on the build tools.  There are examples of how this works in this project's tests.
