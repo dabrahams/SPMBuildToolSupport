@@ -52,13 +52,13 @@ jobs:
         include:
           # Default values to add
           - setup-swift:
-              action: swift-actions/setup-swift@v1
+              action: 'swift-actions/setup-swift@v1'
               with:
                 swift-version: '5.8'
 
           # Overrides for the defaults
           - setup-swift:
-              action: compnerd/gha-setup-swift@main
+              action: 'compnerd/gha-setup-swift@main'
               with:
                 github-repo: thebrowsercompany/swift-build
                 release-asset-name: installer-amd64.exe
