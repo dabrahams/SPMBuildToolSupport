@@ -21,7 +21,7 @@ name: Build and test
 
 jobs:
   build-devcontainer:
-    name: "Devcontainer: ${{ matrix.host.os }}/${{ matrix.configuration }}"
+    name: "Devcontainer: ${{ matrix.os }}/${{ matrix.configuration }}"
     strategy:
       matrix:
         host: [
@@ -31,7 +31,7 @@ jobs:
           }
         ]
         os: [ubuntu-latest]
-        configuration: [debug, release]
+        configuration: [debug]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -66,6 +66,8 @@ jobs:
 
       - name: Setup swift
         uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: ${{ matrix.swift.version }}
 
       - name: Build and Test (${{ matrix.configuration }})
         run: |
