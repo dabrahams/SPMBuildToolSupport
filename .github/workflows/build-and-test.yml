@@ -23,7 +23,6 @@ jobs:
   build-devcontainer:
     name: "Devcontainer: ${{ matrix.host.os }}/${{ matrix.configuration }}"
     strategy:
-      fail-fast: false
       matrix:
         host: [
           {
@@ -38,15 +37,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - run: git config --global core.autocrlf input
-
       - name: Build and Test
         uses: devcontainers/ci@v0.3
         with:
           runCmd: |
-            swift build -c ${{ matrix.configuration }} \
-              ${{ matrix.host.build-options }} &&
-
             swift test -c ${{ matrix.configuration }} \
               ${{ matrix.host.test-options }}
 
@@ -73,12 +67,7 @@ jobs:
       - name: Setup swift
         uses: swift-actions/setup-swift@v1
 
-      - name: Build (${{ matrix.configuration }})
-        run: |
-          swift build -c ${{ matrix.configuration }} \
-            ${{ matrix.host.build-options }}
-
-      - name: Test (${{ matrix.configuration }})
+      - name: Build and Test (${{ matrix.configuration }})
         run: |
           swift test -c ${{ matrix.configuration }} \
             ${{ matrix.host.test-options }}
