@@ -44,13 +44,22 @@ jobs:
         os: [macos-latest, ubuntu-latest, windows-latest]
         configuration: [debug]
         include:
+          # Default values to add
+          - job-defaults:
+              run:
+                shell: bash -eo pipefail {0}
+
           - swift:
               version: '5.8'
 
+          # Overrides for the defaults
           - os: windows-latest
             swift:
               version: '5.6'
 
+            job-defaults: []
+
+    defaults: ${{ matrix.job-defaults }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
