@@ -49,15 +49,23 @@ jobs:
               run:
                 shell: bash -eo pipefail {0}
 
-          - swift:
-              version: '5.8'
+            setup-swift:
+              action: swift-actions/setup-swift@v1
+              with:
+                swift-version: '5.8'
 
           # Overrides for the defaults
           - os: windows-latest
-            swift:
-              version: '5.6'
 
             job-defaults: []
+
+            setup-swift:
+              action: compnerd/gha-setup-swift@main
+              with:
+                github-repo: thebrowsercompany/swift-build
+                release-asset-name: installer-amd64.exe
+                release-tag-name: 20231010.3
+                github-token: ${{ secrets.GITHUB_TOKEN }}
 
     defaults: ${{ matrix.job-defaults }}
     runs-on: ${{ matrix.os }}
@@ -66,9 +74,8 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup swift
-        uses: swift-actions/setup-swift@v1
-        with:
-          swift-version: ${{ matrix.swift.version }}
+        uses: ${{ matrix.setup-swift.action }}
+        with: ${{ matrix.setup-swift.with }}
 
       - name: Build and Test (${{ matrix.configuration }})
         run: swift test -c ${{ matrix.configuration }}
