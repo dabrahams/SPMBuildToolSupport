@@ -24,12 +24,6 @@ jobs:
     name: "Devcontainer: ${{ matrix.os }}/${{ matrix.configuration }}"
     strategy:
       matrix:
-        host: [
-          {
-            build-options: "-v --build-tests -Xswiftc -enable-testing",
-            test-options: "-v",
-          }
-        ]
         os: [ubuntu-latest]
         configuration: [debug]
 
@@ -40,21 +34,13 @@ jobs:
       - name: Build and Test
         uses: devcontainers/ci@v0.3
         with:
-          runCmd: |
-            swift test -c ${{ matrix.configuration }} \
-              ${{ matrix.host.test-options }}
+          runCmd: swift test -c ${{ matrix.configuration }}
 
   build-native:
     name: "Native: ${{ matrix.os }}/${{ matrix.configuration }}"
     strategy:
       fail-fast: false
       matrix:
-        host: [
-          {
-            build-options: "-v --build-tests -Xswiftc -enable-testing",
-            test-options: "-v"
-          }
-        ]
         os: [macos-latest, ubuntu-latest, windows-latest]
         configuration: [debug]
         include:
@@ -76,6 +62,4 @@ jobs:
           swift-version: ${{ matrix.swift.version }}
 
       - name: Build and Test (${{ matrix.configuration }})
-        run: |
-          swift test -c ${{ matrix.configuration }} \
-            ${{ matrix.host.test-options }}
+        run: swift test -c ${{ matrix.configuration }}
