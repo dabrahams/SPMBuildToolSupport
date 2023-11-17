@@ -62,6 +62,7 @@ jobs:
           }
         ]
         os: [macos-latest, ubuntu-latest, windows-latest]
+        swift: [{version: "5.8"}]
         configuration: [debug]
 
     runs-on: ${{ matrix.os }}
