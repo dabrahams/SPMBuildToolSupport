@@ -51,7 +51,7 @@ jobs:
           - shell: 'bash -eo pipefail {0}'
 
           # Overrides for the defaults
-          - shell: 'cmd /c {0}'
+          - shell:
             os: windows-latest
 
     runs-on: ${{ matrix.os }}
