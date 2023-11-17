@@ -20,7 +20,8 @@ name: Build and test
       - ".gitignore"
 
 jobs:
-  build-devcontainer:
+
+  devcontainer:
     name: "Devcontainer: ${{ matrix.os }}/${{ matrix.configuration }}"
     strategy:
       matrix:
@@ -36,7 +37,7 @@ jobs:
         with:
           runCmd: swift test -c ${{ matrix.configuration }}
 
-  build-native:
+  native:
     name: "Native: ${{ matrix.os }}/${{ matrix.configuration }}"
     strategy:
       fail-fast: false
@@ -47,24 +48,9 @@ jobs:
 
         include:
           # Default values to add
-          - setup-swift:
-              name: Setup Swift
-              uses: 'swift-actions/setup-swift@v1'
-              with:
-                swift-version: '5.8'
-
           - shell: 'bash -eo pipefail {0}'
 
           # Overrides for the defaults
-          - setup-swift:
-              name: Setup Swift
-              uses: 'compnerd/gha-setup-swift@main'
-              with:
-                github-repo: thebrowsercompany/swift-build
-                release-asset-name: installer-amd64.exe
-                release-tag-name: 20231010.3
-            os: windows-latest
-
           - shell: 'cmd /c {0}'
             os: windows-latest
 
@@ -72,12 +58,26 @@ jobs:
 
     defaults:
       run:
+        shell: ${{ matrix.shell }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - ${{ matrix.setup-swift }}
+      - name: Setup Swift (Unices)
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: 'swift-actions/setup-swift@v1'
+        with:
+          version: 5.8
+
+      - name: Setup Swift (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        uses: 'compnerd/gha-setup-swift@main'
+        with:
+          github-repo: thebrowsercompany/swift-build
+          release-asset-name: installer-amd64.exe
+          release-tag-name: 20231010.3
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Test (${{ matrix.configuration }})
         run: swift test -c ${{ matrix.configuration }}
