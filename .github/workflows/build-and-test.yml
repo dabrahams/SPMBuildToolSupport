@@ -45,10 +45,6 @@ jobs:
 
         configuration: [debug]
 
-        defaults:
-          - { os: windows-latest }
-          - { run: { shell: 'bash -eo pipefail {0}' } }
-
         include:
           # Default values to add
           - setup-swift:
@@ -56,6 +52,8 @@ jobs:
               uses: 'swift-actions/setup-swift@v1'
               with:
                 swift-version: '5.8'
+
+          - shell: 'bash -eo pipefail {0}'
 
           # Overrides for the defaults
           - setup-swift:
@@ -67,9 +65,13 @@ jobs:
                 release-tag-name: 20231010.3
             os: windows-latest
 
+          - shell: 'cmd /c {0}'
+            os: windows-latest
+
     runs-on: ${{ matrix.os }}
 
-    defaults: ${{ matrix.defaults }}
+    defaults:
+      run:
 
     steps:
       - name: Checkout
