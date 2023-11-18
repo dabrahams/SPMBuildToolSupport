@@ -91,7 +91,7 @@ extension URL {
   }
 
   /// The representation used by the native filesystem.
-  internal var fileSystemPath: String {
+  internal var platformString: String {
     self.withUnsafeFileSystemRepresentation { String(cString: $0!) }
   }
 
@@ -252,7 +252,7 @@ public extension PortableBuildCommand.Executable {
         ? [ "--skip-build" ]
         : [
           "--scratch-path",
-          (packageDirectory / ".build" / UUID().uuidString).fileSystemPath
+          (packageDirectory / ".build" / UUID().uuidString).platformString
         ]
 
       return .init(
@@ -268,7 +268,7 @@ public extension PortableBuildCommand.Executable {
           // context.workDirectory and add an explicit build step to delete it to keep its contents
           // from being incorporated into the resources of the target we're building.
           "--disable-sandbox",
-          "--package-path", packageDirectory.fileSystemPath]
+          "--package-path", packageDirectory.platformString]
           + conditionalOptions
           + [ productName ],
         additionalSources:
