@@ -419,6 +419,87 @@ public enum PortableBuildCommand {
 
 }
 
+private extension Process {
+
+  /// The results of a process run that exited with a nonzero code.
+  struct NonzeroExit: Error {
+
+    /// The nonzero exit code of the process run.
+    public let terminationStatus: Int32
+
+    /// The contents of the standard output stream.
+    public let standardOutput: String
+
+    /// The contents of the standard error stream.
+    public let standardError: String
+
+    /// The command-line that triggered the process run.
+    public let commandLine: [String]
+  }
+
+  /// Runs `executable` with the given command line `arguments` and returns the text written to its
+  /// standard output, throwing `NonzeroExit` if the command fails.
+  static func commandOutput(
+    _ executable: URL, arguments: [String] = []) throws -> String {
+
+    let p = Process()
+    let pipes = (standardOutput: Pipe(), standardError: Pipe())
+    p.executableURL = executable
+    p.arguments = arguments
+    p.standardOutput = pipes.standardOutput
+    p.standardError = pipes.standardError
+    try p.run()
+    p.waitUntilExit()
+
+    let outputText = (
+      standardOutput: pipes.standardOutput.readUTF8(),
+      standardError: pipes.standardError.readUTF8()
+    )
+
+    if p.terminationStatus != 0 {
+      throw NonzeroExit(
+        terminationStatus: p.terminationStatus,
+        standardOutput: outputText.standardOutput, standardError: outputText.standardError,
+        commandLine: [executable.platformString] + arguments)
+    }
+
+    return outputText.standardOutput
+  }
+
+}
+
+extension Process.NonzeroExit: CustomStringConvertible {
+
+  var description: String {
+    return """
+      Process.NonzeroExit (status: \(terminationStatus))
+      Command line: \(commandLine.map(String.init(reflecting:)).joined(separator: " "))
+
+        standard output:
+        -------------
+      \(standardOutput)
+        -------------
+
+        standard error:
+        -------------
+      \(standardError)
+        -------------
+      """
+  }
+
+}
+
+extension Pipe {
+
+  /// Returns the contents decoded as UTF-8, while consuming `self`.
+  func readUTF8() -> String {
+    String(decoding: fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+  }
+
+}
+
+
+
 // Local Variables:
 // fill-column: 100
 // End:
