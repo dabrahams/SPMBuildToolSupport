@@ -252,9 +252,7 @@ public extension PortableBuildCommand.Executable {
         ? [ "--skip-build" ]
         : [
           "--scratch-path",
-          packageDirectory.appendingPathComponent(".build")
-            .appendingPathComponent(UUID().uuidString)
-            .fileSystemPath
+          (packageDirectory / ".build" / UUID().uuidString).fileSystemPath
         ]
 
       return .init(
