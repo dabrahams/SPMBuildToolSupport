@@ -1,27 +1,88 @@
 import PackagePlugin
 import Foundation
+
 #if os(Windows)
 import WinSDK
+let osIsWindows = true
+#else
+let osIsWindows = false
 #endif
 
-#if os(Windows)
 /// The name of the environment variable containing the executable search path.
-fileprivate let pathEnvironmentVariable = "Path"
+private let pathEnvironmentVariable = osIsWindows ? "Path" : "PATH"
+
 /// The separator between elements of the executable search path.
-fileprivate let pathEnvironmentSeparator: Character = ";"
+private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
+
 /// The file extension applied to binary executables
-fileprivate let executableSuffix = ".exe"
+private let executableSuffix = osIsWindows ? ".exe" : ""
 
-fileprivate extension URL {
+/// The name of the file that would be run by a “`swift`” command.
+private let swiftExecutableName = "swift" + executableSuffix
 
-  /// Returns the URL given by removing all the elements of `suffix`
-  /// from the tail of `pathComponents`, or` `nil` if `suffix` is not
-  /// a suffix of `pathComponents`.
-  func sansPathComponentSuffix<Suffix: BidirectionalCollection<String>>(_ suffix: Suffix)
-    -> URL?
+/// The environment variables of the running process.
+private let envVars = ProcessInfo.processInfo.environment
+
+private extension URL {
+
+  /// Returns `root` with the additional path component `x` appended.
+  static func / (_ root: URL, x: String) -> URL {
+    root.appendingPathComponent(x)
+  }
+
+}
+
+extension PackagePlugin.PluginContext {
+
+  /// Returns the executable file that would be run by the “`swift`” command with the given
+  /// executable search path in the environment.
+  fileprivate func swiftCommandExecutable(foundIn searchPath: [URL]) -> URL! {
+
+    searchPath.lazy.map { $0/swiftExecutableName }
+      .first(where: { FileManager().isExecutableFile(atPath: $0.path) })
+
+  }
+
+  /// A swift executable, if possible from the toolchain executing the current build.
+  ///
+  /// If that executable can't be identified, warnings will be logged.
+  var swiftExecutable: URL {
+    let pathEnvironment = envVars[pathEnvironmentVariable]!
+      .split(separator: pathEnvironmentSeparator).map { URL(fileURLWithPath: String($0)) }
+
+    // Try to identify the current Swift Toolchain/ directory.
+    //
+    // SwiftPM seems to put a descendant of that directory, with the following suffix, into the
+    // executable search path when plugins are run
+    let pluginAPISuffix = ["lib", "swift", "pm", "PluginAPI"]
+
+    if let toolchain = pathEnvironment.lazy
+         .compactMap({ $0.sansPathComponentSuffix(pluginAPISuffix) }).first
+    {
+      if let s = swiftCommandExecutable(foundIn: [toolchain/"bin"]) { return s }
+    }
+    print("Warning: could not identify current toolchain; looking for swift in PATH.")
+
+    if let s = swiftCommandExecutable(foundIn: pathEnvironment) { return s }
+    print("Warning: could not find swift in PATH; asking SPM for the \"swift\" tool.")
+
+    if let s = try? self.tool(named: "swift").path.url { return s }
+
+    fatalError("Could not find any swift executable.")
+  }
+
+}
+
+extension URL {
+
+  /// Returns a copy of self after removing `possibleSuffix` from the tail of its `pathComponents`,
+  /// or returns `nil` if `possibleSuffix` is not a suffix of `pathComponents`.
+  fileprivate func sansPathComponentSuffix<
+    PossibleSuffix: BidirectionalCollection<String>
+  >(_ possibleSuffix: PossibleSuffix) -> URL?
   {
     var r = self
-    var remainingSuffix = suffix[...]
+    var remainingSuffix = possibleSuffix[...]
     while let x = remainingSuffix.popLast() {
       if r.lastPathComponent != x { return nil }
       r.deleteLastPathComponent()
@@ -30,16 +91,18 @@ fileprivate extension URL {
   }
 
   /// The representation used by the native filesystem.
-  var fileSystemPath: String {
+  internal var fileSystemPath: String {
     self.withUnsafeFileSystemRepresentation { String(cString: $0!) }
   }
+
 }
 
 fileprivate extension PackagePlugin.Target {
 
   /// The source files.
   var allSourceFiles: [URL] {
-    return (self as? PackagePlugin.SourceModuleTarget)?.sourceFiles(withSuffix: "").map(\.path.url) ?? []
+    return (self as? PackagePlugin.SourceModuleTarget)?
+      .sourceFiles(withSuffix: "").map(\.path.url) ?? []
   }
 
 }
@@ -67,7 +130,6 @@ fileprivate extension PackagePlugin.Package {
   }
 
 }
-#endif
 
 // Workarounds for SPM's buggy `Path` type on Windows.
 //
@@ -170,37 +232,18 @@ public extension PortableBuildCommand.Executable {
       return .init(executable: pathToExecutable.portable, argumentPrefix: [], additionalSources: [])
 
     case .targetInThisPackage(name: let productName):
-      #if !os(Windows)
-      return try .init(
-        executable: context.tool(named: productName).path.portable,
-        argumentPrefix: [], additionalSources: [])
-      #else
+      if !osIsWindows {
+        return try .init(
+          executable: context.tool(named: productName).path.portable,
+          argumentPrefix: [], additionalSources: [])
+      }
+
       // Instead of depending on context.tool(named:), which demands a declared dependency on the
       // tool, which causes link errors on Windows
       // (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716),
       // Invoke swift reentrantly to run the tool.
 
-      //
-      // If a likely candidate for the current toolchain can be found in the `Path`, prepend its
-      // `bin/` dfirectory.
-      //
-      var searchPath = ProcessInfo.processInfo.environment[pathEnvironmentVariable]!
-        .split(separator: pathEnvironmentSeparator).map { URL(fileURLWithPath: String($0)) }
-
-      // SwiftPM seems to put a descendant of the currently-running Swift Toolchain/ directory having
-      // this component suffix into the executable search path when plugins are run.
-      let pluginAPISuffix = ["lib", "swift", "pm", "PluginAPI"]
-
-      if let p = searchPath.lazy.compactMap({ $0.sansPathComponentSuffix(pluginAPISuffix) }).first {
-        searchPath = [ p.appendingPathComponent("bin") ] + searchPath
-      }
-
-      // Try searchPath first, then fall back to SPM's `tool(named:)`
-      let swift = try searchPath.lazy.map { $0.appendingPathComponent("swift" + executableSuffix) }
-        .first { FileManager().isExecutableFile(atPath: $0.path) }
-        ?? context.tool(named: "swift").path.url
-
-      let noReentrantBuild = ProcessInfo.processInfo.environment["SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD"] != nil
+      let noReentrantBuild = envVars["SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD"] != nil
       let packageDirectory = context.package.directory.url
 
       // Locate the scratch directory for reentrant builds inside the package directory to work
@@ -215,7 +258,7 @@ public extension PortableBuildCommand.Executable {
         ]
 
       return .init(
-        executable: swift.spmPath,
+        executable: context.swiftExecutable.spmPath,
         argumentPrefix: [
           "run",
           // Only Macs currently use sandboxing, but nested sandboxes are prohibited, so for future
@@ -232,7 +275,6 @@ public extension PortableBuildCommand.Executable {
           + [ productName ],
         additionalSources:
           try context.package.sourceDependencies(ofProductNamed: productName))
-      #endif
     }
   }
 }
@@ -378,3 +420,7 @@ public enum PortableBuildCommand {
          outputFilesDirectory: Path)
 
 }
+
+// Local Variables:
+// fill-column: 100
+// End:
