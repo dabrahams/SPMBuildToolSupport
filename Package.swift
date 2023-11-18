@@ -20,13 +20,7 @@ let package = Package(
 
     .plugin(
       name: "ResourceGeneratorPlugin", capability: .buildTool(),
-      // On Windows the plugin cannot have a dependency on the tool,
-      // or building tests that depend (transitively) on the output of
-      // the plugin fail to build with link errors about duplicate
-      // main functions
-      // (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716).
-      //
-      dependencies: onWindows ? [] : ["GenerateResource"]
+      dependencies: ["GenerateResource"]
     ),
 
 

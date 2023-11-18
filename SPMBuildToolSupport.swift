@@ -229,28 +229,13 @@ public extension PortableBuildCommand.Executable {
       return .init(executable: pathToExecutable.portable, argumentPrefix: [], additionalSources: [])
 
     case .targetInThisPackage(name: let targetName):
-      if !osIsWindows {
-        return try .init(
-          executable: context.tool(named: targetName).path.portable,
-          argumentPrefix: [], additionalSources: [])
-      }
 
       // Instead of depending on context.tool(named:), which demands a declared dependency on the
       // tool, which causes link errors on Windows
       // (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716),
       // Invoke swift reentrantly to run the tool.
 
-      let noReentrantBuild = envVars["SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD"] != nil
       let packageDirectory = context.package.directory.url
-
-      // Locate the scratch directory for reentrant builds inside the package directory to work
-      // around SPM's broken Windows path handling
-      let conditionalOptions = noReentrantBuild
-        ? [ "--skip-build" ]
-        : [
-          "--scratch-path",
-          (packageDirectory / ".build" / UUID().uuidString).platformString
-        ]
 
       return .init(
         executable: context.swiftExecutable.spmPath,
@@ -265,11 +250,19 @@ public extension PortableBuildCommand.Executable {
           // context.workDirectory and add an explicit build step to delete it to keep its contents
           // from being incorporated into the resources of the target we're building.
           "--disable-sandbox",
-          "--package-path", packageDirectory.platformString]
-          + conditionalOptions
-          + [ targetName ],
+          "--package-path", packageDirectory.platformString,
+          "--skip-build",
+          targetName ],
         additionalSources:
-          try context.package.sourceDependencies(ofTargetNamed: targetName))
+//          try context.package.sourceDependencies(ofTargetNamed: targetName) +
+          [(context.pluginWorkDirectory
+              .removingLastComponent()
+              .removingLastComponent()
+              .removingLastComponent()
+              .removingLastComponent()
+              .removingLastComponent().appending(
+                ["arm64-apple-macosx", "debug", targetName + executableSuffix])).url]
+      )
     }
   }
 }
@@ -306,7 +299,9 @@ fileprivate extension PortableBuildCommand {
         executable: i.executable,
         arguments: i.argumentPrefix + arguments,
         environment: environment,
-        inputFiles: inputFiles.map(\.portable) + (pluginSources + i.additionalSources).map(\.spmPath),
+        inputFiles:
+          inputFiles.map(\.portable)
+          + (pluginSources + i.additionalSources).map(\.spmPath),
         outputFiles: outputFiles.map(\.portable))
 
     case .prebuildCommand(
