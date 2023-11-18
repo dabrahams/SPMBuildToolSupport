@@ -110,20 +110,17 @@ fileprivate extension PackagePlugin.Target {
 fileprivate extension PackagePlugin.Package {
 
   /// The source files in this package on which the given executable depends.
-  func sourceDependencies(ofProductNamed productName: String) throws -> [URL] {
+  func sourceDependencies(ofTargetNamed targetName: String) throws -> [URL] {
     var result: Set<URL> = []
-    let p = products.first { $0.name == productName }!
-    var visitedTargets = Set<PackagePlugin.Target.ID>()
+    let t0 = targets.first { $0.name == targetName }!
+    var visitedTargets: Set = [t0.id]
 
-    for t0 in p.targets {
-      if visitedTargets.insert(t0.id).inserted {
-        result.formUnion(t0.allSourceFiles)
-      }
+    result.formUnion(t0.allSourceFiles)
 
-      for t1 in t0.recursiveTargetDependencies {
-        if visitedTargets.insert(t1.id).inserted {
-          result.formUnion(t1.allSourceFiles)
-        }
+
+    for t1 in t0.recursiveTargetDependencies {
+      if visitedTargets.insert(t1.id).inserted {
+        result.formUnion(t1.allSourceFiles)
       }
     }
     return Array(result)
@@ -231,10 +228,10 @@ public extension PortableBuildCommand.Executable {
     case .preInstalled(file: let pathToExecutable):
       return .init(executable: pathToExecutable.portable, argumentPrefix: [], additionalSources: [])
 
-    case .targetInThisPackage(name: let productName):
+    case .targetInThisPackage(name: let targetName):
       if !osIsWindows {
         return try .init(
-          executable: context.tool(named: productName).path.portable,
+          executable: context.tool(named: targetName).path.portable,
           argumentPrefix: [], additionalSources: [])
       }
 
@@ -270,9 +267,9 @@ public extension PortableBuildCommand.Executable {
           "--disable-sandbox",
           "--package-path", packageDirectory.platformString]
           + conditionalOptions
-          + [ productName ],
+          + [ targetName ],
         additionalSources:
-          try context.package.sourceDependencies(ofProductNamed: productName))
+          try context.package.sourceDependencies(ofTargetNamed: targetName))
     }
   }
 }
