@@ -225,6 +225,10 @@ public extension PortableBuildCommand.Executable {
 
   fileprivate func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
+    case .swift:
+      return .init(
+        executable: context.swiftExecutable.spmPath, argumentPrefix: [], additionalSources: [])
+
     case .preInstalled(file: let pathToExecutable):
       return .init(
         executable: pathToExecutable.repaired, argumentPrefix: [], additionalSources: [])
@@ -336,6 +340,9 @@ public enum PortableBuildCommand {
 
   /// A command-line tool to be invoked.
   public enum Executable {
+
+    /// Swift itself.
+    case swift
 
     /// The executable target named `name` in this package
     case targetInThisPackage(name: String)
