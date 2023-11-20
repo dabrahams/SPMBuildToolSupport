@@ -502,9 +502,3 @@ extension Pipe {
   }
 
 }
-
-
-
-// Local Variables:
-// fill-column: 100
-// End:
