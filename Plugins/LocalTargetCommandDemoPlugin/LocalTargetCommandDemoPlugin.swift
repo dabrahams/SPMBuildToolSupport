@@ -2,7 +2,7 @@ import Foundation
 import PackagePlugin
 
 @main
-struct ResourceGeneratorPlugin: SPMBuildToolPlugin {
+struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
 
   func buildCommands(
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target

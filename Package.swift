@@ -3,7 +3,7 @@
 import PackageDescription
 
 // Define a constant to clean up dependency management for SPM bug workarounds (see
-// ResourceGeneratorPlugin below).  Swift only allows conditional compilation at statement
+// LocalTargetCommandDemoPlugin below).  Swift only allows conditional compilation at statement
 // granularity so that becomes very inconvenient otherwise.
 #if os(Windows)
 let onWindows = true
@@ -22,8 +22,8 @@ let package = Package(
     ),
 
     .plugin(
-      name: "ResourceGeneratorPlugin", capability: .buildTool(),
-      // This plugin depends on the executable GenerateResource tool.
+      name: "LocalTargetCommandDemoPlugin", capability: .buildTool(),
+      // This plugin causes an invocation of the executable GenerateResource target.
       //
       // On Windows the plugin cannot have a dependency on the tool, or building tests that depend
       // (transitively) on the output of the plugin fail to build with link errors about duplicate
@@ -39,7 +39,7 @@ let package = Package(
 
     .target(
       name: "LibWithResource",
-      plugins: ["ResourceGeneratorPlugin"]
+      plugins: ["LocalTargetCommandDemoPlugin"]
     ),
 
     .executableTarget(
