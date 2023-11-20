@@ -29,8 +29,7 @@ let package = Package(
       // (transitively) on the output of the plugin fail to build with link errors about duplicate
       // main functions
       // (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716).  On
-      // other platforms the plugin must have a dependency on the tool.
-      //
+      // other platforms the plugin _must_ have a dependency on the tool.
       dependencies: onWindows ? [] : ["GenerateResource"]
     ),
 
