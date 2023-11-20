@@ -155,7 +155,7 @@ public extension Path {
   var url: URL { URL(fileURLWithPath: platformString) }
 
   /// A representation of `Self` that works on all platforms.
-  var portable: Self {
+  var repaired: Self {
     #if os(Windows)
     Path(self.platformString)
     #else
@@ -226,12 +226,13 @@ public extension PortableBuildCommand.Executable {
   fileprivate func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
     case .preInstalled(file: let pathToExecutable):
-      return .init(executable: pathToExecutable.portable, argumentPrefix: [], additionalSources: [])
+      return .init(
+        executable: pathToExecutable.repaired, argumentPrefix: [], additionalSources: [])
 
     case .targetInThisPackage(name: let targetName):
       if !osIsWindows {
         return try .init(
-          executable: context.tool(named: targetName).path.portable,
+          executable: context.tool(named: targetName).path.repaired,
           argumentPrefix: [], additionalSources: [])
       }
 
@@ -306,8 +307,8 @@ fileprivate extension PortableBuildCommand {
         executable: i.executable,
         arguments: i.argumentPrefix + arguments,
         environment: environment,
-        inputFiles: inputFiles.map(\.portable) + (pluginSources + i.additionalSources).map(\.spmPath),
-        outputFiles: outputFiles.map(\.portable))
+        inputFiles: inputFiles.map(\.repaired) + (pluginSources + i.additionalSources).map(\.spmPath),
+        outputFiles: outputFiles.map(\.repaired))
 
     case .prebuildCommand(
            displayName: let displayName,
@@ -323,7 +324,7 @@ fileprivate extension PortableBuildCommand {
         executable: i.executable,
         arguments: i.argumentPrefix + arguments,
         environment: environment,
-        outputFilesDirectory: outputFilesDirectory.portable)
+        outputFilesDirectory: outputFilesDirectory.repaired)
     }
   }
 
