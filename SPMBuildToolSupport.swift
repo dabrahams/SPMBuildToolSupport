@@ -36,7 +36,7 @@ extension PackagePlugin.PluginContext {
 
   /// Returns the executable file that would be run by the “`swift`” command with the given
   /// executable search path in the environment.
-  fileprivate func swiftCommandExecutable(foundIn searchPath: [URL]) -> URL! {
+  private func swiftCommandExecutable(foundIn searchPath: [URL]) -> URL! {
 
     searchPath.lazy.map { $0/swiftExecutableName }
       .first(where: { FileManager().isExecutableFile(atPath: $0.path) })
