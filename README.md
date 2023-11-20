@@ -17,7 +17,7 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
 ## How do I use this package?
 
 1. Arrange for your plugin's source to include [`SPMBuildToolSupport.swift`](SPMBuildToolSupport.swift).  One way to do that if you want to stay up-to-date with improvements here, and especially if your project contains multiple plugins, is to make this repository a submodule of yours, and symlink the file into each subdirectory of your `Plugins/` directory (assuming standard SPM layout).
-2. Make your plugin inherit from `PortableBuildToolPlugin` and implement its `portableBuildCommands` method (instead of inheriting from `BuildToolPlugin` and implementing `createBuildCommands`).  This project contains several examples.
+2. Make your plugin inherit from `SPMBuildToolPlugin` and implement its `portableBuildCommands` method (instead of inheriting from `BuildToolPlugin` and implementing `createBuildCommands`).  This project contains several examples.
 3. To turn a `PackagePlugin.Path` or a `Foundation.URL` into a string that will be recognized by the host OS (say, to pass on a command line), use its `.platformString` property.  **Do not use `URL`'s other properties (e.g. `.path`) for this purpose, as tempting as it may be**.
 4. Avoid naïve path manipulations on a `PackagePlugin.Path` directly, which is buggy on some platforms.  Consider using its `url` property and then, if necessary, converting the result back to a `PackagePlugin.Path`.
 5. **On Windows**:

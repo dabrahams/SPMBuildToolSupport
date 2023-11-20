@@ -186,17 +186,17 @@ public extension URL {
 }
 
 /// Defines functionality for all plugins having a `buildTool` capability.
-public protocol PortableBuildToolPlugin: BuildToolPlugin {
+public protocol SPMBuildToolPlugin: BuildToolPlugin {
 
   /// Returns the build commands for `target` in `context`.
   func portableBuildCommands(
     context: PackagePlugin.PluginContext,
     target: PackagePlugin.Target
-  ) async throws -> [PortableBuildCommand]
+  ) async throws -> [SPMBuildCommand]
 
 }
 
-extension PortableBuildToolPlugin {
+extension SPMBuildToolPlugin {
 
   public func createBuildCommands(context: PluginContext, target: Target) async throws
     -> [PackagePlugin.Command]
@@ -210,7 +210,7 @@ extension PortableBuildToolPlugin {
 
 }
 
-public extension PortableBuildCommand.Executable {
+public extension SPMBuildCommand.Executable {
 
   /// A partial translation to SPM plugin inputs of an invocation.
   struct SPMInvocation {
@@ -279,7 +279,7 @@ public extension PortableBuildCommand.Executable {
   }
 }
 
-fileprivate extension PortableBuildCommand {
+fileprivate extension SPMBuildCommand {
 
   /// Returns a representation of `self` for the result of a `BuildToolPlugin.createBuildCommands`
   /// invocation with the given `context` parameter.
@@ -336,7 +336,7 @@ fileprivate extension PortableBuildCommand {
 
 
 /// A command to run during the build.
-public enum PortableBuildCommand {
+public enum SPMBuildCommand {
 
   /// A command-line tool to be invoked.
   public enum Executable {
@@ -378,7 +378,7 @@ public enum PortableBuildCommand {
   ///     was generated as if in its source directory; other files are treated
   ///     as resources as if explicitly listed in `Package.swift` using
   ///     `.process(...)`.
-  ///   - pluginSourceFile: the path to a source file of the PortableBuildToolPlugin; allow the
+  ///   - pluginSourceFile: the path to a source file of the SPMBuildToolPlugin; allow the
   ///     default to take effect.
   case buildCommand(
         displayName: String?,

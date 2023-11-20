@@ -2,11 +2,11 @@ import Foundation
 import PackagePlugin
 
 @main
-struct ResourceGeneratorPlugin: PortableBuildToolPlugin {
+struct ResourceGeneratorPlugin: SPMBuildToolPlugin {
 
   func portableBuildCommands(
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target
-  ) throws -> [PortableBuildCommand] {
+  ) throws -> [SPMBuildCommand] {
 
     let inputs = (target as! SourceModuleTarget)
       .sourceFiles(withSuffix: ".in").map(\.path)
