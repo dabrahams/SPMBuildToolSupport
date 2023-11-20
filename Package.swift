@@ -9,7 +9,7 @@ let onWindows = false
 #endif
 
 let package = Package(
-  name: "ResourceGeneration",
+  name: "SPMBuildToolSupport",
   products: [],
 
   targets: [
