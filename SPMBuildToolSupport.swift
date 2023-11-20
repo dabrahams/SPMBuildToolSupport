@@ -189,7 +189,7 @@ public extension URL {
 public protocol SPMBuildToolPlugin: BuildToolPlugin {
 
   /// Returns the build commands for `target` in `context`.
-  func portableBuildCommands(
+  func buildCommands(
     context: PackagePlugin.PluginContext,
     target: PackagePlugin.Target
   ) async throws -> [SPMBuildCommand]
@@ -202,7 +202,7 @@ extension SPMBuildToolPlugin {
     -> [PackagePlugin.Command]
   {
 
-    return try await portableBuildCommands(context: context, target: target).map {
+    return try await buildCommands(context: context, target: target).map {
       try $0.spmCommand(in: context)
     }
 

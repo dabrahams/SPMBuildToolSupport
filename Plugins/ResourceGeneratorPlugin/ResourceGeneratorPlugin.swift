@@ -4,7 +4,7 @@ import PackagePlugin
 @main
 struct ResourceGeneratorPlugin: SPMBuildToolPlugin {
 
-  func portableBuildCommands(
+  func buildCommands(
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target
   ) throws -> [SPMBuildCommand] {
 
