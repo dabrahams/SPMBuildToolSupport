@@ -1,10 +1,11 @@
 import XCTest
 import LibWithResource
+import LibWithGeneratedSource
 import Foundation
 
 final class ResourceGenerationTests: XCTestCase {
 
-  func testIt() throws {
+  func testResourceGeneration() throws {
     guard let test1 = resourceBundle.url(forResource: "Test1.out", withExtension: nil) else {
       XCTFail("Test1.out not found.")
       return
@@ -18,5 +19,10 @@ final class ResourceGenerationTests: XCTestCase {
     }
     let content2 = try String(contentsOf: test2, encoding: .utf8)
     XCTAssert(content2.hasSuffix("\n# PROCESSED!\n"))
+  }
+
+  func testSourceGeneration() throws {
+    XCTAssertEqual(generatedValues.0, "Zero")
+    XCTAssertEqual(generatedValues.1, "One")
   }
 }
