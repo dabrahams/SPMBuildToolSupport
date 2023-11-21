@@ -1,0 +1,4 @@
+illegal swift code!
+// The above is intentional; the source generation tool will comment it out.
+
+let generatedValue0 = "Zero"
