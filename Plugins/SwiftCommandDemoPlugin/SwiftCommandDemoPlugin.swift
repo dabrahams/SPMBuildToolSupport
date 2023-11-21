@@ -15,7 +15,8 @@ struct SwiftCommandDemoPlugin: SPMBuildToolPlugin {
     // The swift script to run.
     let scriptFile = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-      .appending(components: "Scripts", "GenerateSourceFiles.swift").spmPath
+      .appendingPathComponent("Scripts").appendingPathComponent("GenerateSourceFiles.swift")
+      .spmPath
 
     let outputDirectory = context.pluginWorkDirectory
 
