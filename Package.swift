@@ -56,7 +56,7 @@ let package = Package(
     // ----------------- Tests that prove this all works. --------------
 
     .testTarget(
-      name: "ResourceGenerationTests",
+      name: "SPMBuildToolSupportTests",
       dependencies: ["LibWithResource", "LibWithGeneratedSource"]
     ),
 
