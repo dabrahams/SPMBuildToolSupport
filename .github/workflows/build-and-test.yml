@@ -68,7 +68,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         uses: 'swift-actions/setup-swift@v1'
         with:
-          version: 5.8
+          version: 5.9
 
       - name: Setup Swift (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
