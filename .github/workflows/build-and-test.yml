@@ -82,5 +82,4 @@ jobs:
       - name: Build and Test (${{ matrix.configuration }})
         run: >
           swift test -c ${{ matrix.configuration }}
-          --disable-sandbox
           --explicit-target-dependency-import-check=error
