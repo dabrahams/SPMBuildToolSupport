@@ -227,7 +227,13 @@ public extension SPMBuildCommand.Executable {
     switch self {
     case .swift:
       return .init(
-        executable: context.swiftExecutable.spmPath, argumentPrefix: [], additionalSources: [])
+        executable: context.swiftExecutable.spmPath,
+        argumentPrefix: [
+          // Even if running Swift as an interpreter, it may write to the clang module cache, which
+          // may be outside an SPM sandbox (currently only supported on MacOS).  Instead, force it into the
+          "-module-cache-path",
+          context.pluginWorkDirectory.appending("clang-module-cache").platformString ],
+        additionalSources: [])
 
     case .preInstalled(file: let pathToExecutable):
       return .init(

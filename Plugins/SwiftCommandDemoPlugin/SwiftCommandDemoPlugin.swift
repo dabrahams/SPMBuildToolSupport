@@ -31,8 +31,6 @@ struct SwiftCommandDemoPlugin: SPMBuildToolPlugin {
         displayName: "Running script \(scriptFile.lastComponent)",
         executable: .swift,
         arguments: [
-          "-module-cache-path",
-          context.pluginWorkDirectory.appending("clang-module-cache").platformString,
           scriptFile.platformString, "-o", outputDirectory.platformString ]
           + sources.map(\.platformString),
         inputFiles: sources + [scriptFile],
