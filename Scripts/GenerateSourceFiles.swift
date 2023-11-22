@@ -8,6 +8,9 @@ struct UsageError: Error, CustomStringConvertible {
 }
 
 func main() throws {
+  // Log our invocation for diagnostic purposes
+  print("GenerateSourceFiles invocation:",  CommandLine.arguments)
+
   var args = CommandLine.arguments.dropFirst()
   var outputDirectory: URL? = nil
   var inputFiles: [URL] = []

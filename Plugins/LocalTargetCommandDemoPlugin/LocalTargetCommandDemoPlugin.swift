@@ -22,7 +22,7 @@ struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
 
     return [
       .buildCommand(
-        displayName: "Running converter",
+        displayName: "Running GenerateResource",
         executable: .targetInThisPackage(name: "GenerateResource"),
         // Note the use of `.platformString` on these paths rather
         // than `.string`.  Your executable tool may have trouble
