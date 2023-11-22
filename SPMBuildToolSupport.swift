@@ -21,7 +21,7 @@ private let executableSuffix = osIsWindows ? ".exe" : ""
 private let swiftExecutableName = "swift" + executableSuffix
 
 /// The environment variables of the running process.
-private let envVars = ProcessInfo.processInfo.environment
+private var envVars: [String: String] { ProcessInfo.processInfo.environment }
 
 private extension URL {
 
@@ -34,21 +34,30 @@ private extension URL {
 
 extension PackagePlugin.PluginContext {
 
-  /// Returns the executable file that would be run by the “`swift`” command with the given
-  /// executable search path in the environment.
-  private func swiftCommandExecutable(foundIn searchPath: [URL]) -> URL! {
+  /// Returns the binary executable file that would be invoked as `command` from the command
+  /// line if the executable search path in the environment was `searchPath`, or `nil` if no such
+  /// file can be found.
+  public func firstBinaryExecutable(
+    in searchPath: [URL], invocableAs command: String
+  ) -> PackagePlugin.Path? {
 
-    searchPath.lazy.map { $0/swiftExecutableName }
-      .first(where: { FileManager().isExecutableFile(atPath: $0.path) })
+    searchPath.lazy.map { $0/(command + executableSuffix) }
+      .first(where: { FileManager().isExecutableFile(atPath: $0.path) }).map(\.spmPath)
 
   }
 
-  /// A swift executable, if possible from the toolchain executing the current build.
+  // The directories searched for command-line commands having no directory qualification.
+  private var executableSearchPath: [URL] {
+    (envVars[pathEnvironmentVariable] ?? "")
+      .split(separator: pathEnvironmentSeparator)
+      .map { URL(fileURLWithPath: String($0)) }
+  }
+
+  /// A Swift toolchain executable, if possible from the toolchain executing the current build.
   ///
-  /// If that executable can't be identified, warnings will be logged.
-  var swiftExecutable: URL {
-    let pathEnvironment = envVars[pathEnvironmentVariable]!
-      .split(separator: pathEnvironmentSeparator).map { URL(fileURLWithPath: String($0)) }
+  /// Throws if no executable tool can be found for the given command.
+  public func swiftTool(_ command: String = "swift") throws -> PackagePlugin.Path {
+    let path = executableSearchPath
 
     // Try to identify the current Swift Toolchain/ directory.
     //
@@ -56,19 +65,16 @@ extension PackagePlugin.PluginContext {
     // executable search path when plugins are run
     let pluginAPISuffix = ["lib", "swift", "pm", "PluginAPI"]
 
-    if let toolchain = pathEnvironment.lazy
-         .compactMap({ $0.sansPathComponentSuffix(pluginAPISuffix) }).first
+    if let toolchain = path.lazy.compactMap({ $0.sansPathComponentSuffix(pluginAPISuffix) }).first
     {
-      if let s = swiftCommandExecutable(foundIn: [toolchain/"bin"]) { return s }
+      if let s = firstBinaryExecutable(in: [toolchain/"bin"], invocableAs: command) { return s }
     }
-    print("Warning: could not identify current toolchain; looking for swift in PATH.")
+    print("Warning: could not identify current toolchain; looking for \(command) in PATH.")
 
-    if let s = swiftCommandExecutable(foundIn: pathEnvironment) { return s }
-    print("Warning: could not find swift in PATH; asking SPM for the \"swift\" tool.")
+    if let s = firstBinaryExecutable(in: path, invocableAs: command) { return s }
+    print("Warning: could not find swift in PATH; asking SPM for the \(command) tool.")
 
-    if let s = try? self.tool(named: "swift").path.url { return s }
-
-    fatalError("Could not find any swift executable.")
+    return try self.tool(named: command).path
   }
 
 }
@@ -78,8 +84,7 @@ extension URL {
   /// Returns a copy of self after removing `possibleSuffix` from the tail of its `pathComponents`,
   /// or returns `nil` if `possibleSuffix` is not a suffix of `pathComponents`.
   fileprivate func sansPathComponentSuffix<
-    PossibleSuffix: BidirectionalCollection<String>
-  >(_ possibleSuffix: PossibleSuffix) -> URL?
+    PossibleSuffix: BidirectionalCollection<String> >(_ possibleSuffix: PossibleSuffix) -> URL?
   {
     var r = self
     var remainingSuffix = possibleSuffix[...]
@@ -226,11 +231,12 @@ public extension SPMBuildCommand.Executable {
   fileprivate func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
     case .swift:
-      return .init(
-        executable: context.swiftExecutable.spmPath,
+      return try .init(
+        executable: context.swiftTool(),
         argumentPrefix: [
           // Even if running Swift as an interpreter, it may write to the clang module cache, which
-          // may be outside an SPM sandbox (currently only supported on MacOS).  Instead, force it into the
+          // may be outside an SPM sandbox (currently only supported on MacOS).  Instead, force it
+          // into the plugin work directory, and thus into the sandbox.
           "-module-cache-path",
           context.pluginWorkDirectory.appending("clang-module-cache").platformString ],
         additionalSources: [])
@@ -263,8 +269,8 @@ public extension SPMBuildCommand.Executable {
           (packageDirectory / ".build" / UUID().uuidString).platformString
         ]
 
-      return .init(
-        executable: context.swiftExecutable.spmPath,
+      return try .init(
+        executable: context.swiftTool(),
         argumentPrefix: [
           "run",
           // Only Macs currently use sandboxing, but nested sandboxes are prohibited, so for future
@@ -280,7 +286,7 @@ public extension SPMBuildCommand.Executable {
           + conditionalOptions
           + [ targetName ],
         additionalSources:
-          try context.package.sourceDependencies(ofTargetNamed: targetName))
+          context.package.sourceDependencies(ofTargetNamed: targetName))
     }
   }
 }
