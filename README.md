@@ -33,11 +33,10 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
 
 2. Make your plugin inherit from `SPMBuildToolPlugin` and implement its `buildCommands` method
    (instead of inheriting from `BuildToolPlugin` and implementing `createBuildCommands`).  This
-   project contains several examples.  There are three kind of build commands:
+   project contains several examples.  There are two kind of build commands:
 
-   - `.swift`: an invocation of swift itself, e.g. to run a script
    - `.targetInThisPackage(name:)`: an invocation of an executable target in the same package as the
-     plugin.
+       plugin.
    - `.preInstalled(file:)` an invocation of an executable not built as part of the package.
 
 3. To turn a `PackagePlugin.Path` or a `Foundation.URL` into a string that will be recognized by the

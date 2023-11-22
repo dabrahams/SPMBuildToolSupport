@@ -15,7 +15,7 @@ private let pathEnvironmentVariable = osIsWindows ? "Path" : "PATH"
 private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
 
 /// The file extension applied to binary executables
-private let executableSuffix = osIsWindows ? ".exe" : ""
+public let executableSuffix = osIsWindows ? ".exe" : ""
 
 /// The name of the file that would be run by a “`swift`” command.
 private let swiftExecutableName = "swift" + executableSuffix
@@ -230,17 +230,6 @@ public extension SPMBuildCommand.Executable {
 
   fileprivate func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
-    case .swift:
-      return try .init(
-        executable: context.swiftTool(),
-        argumentPrefix: [
-          // Even if running Swift as an interpreter, it may write to the clang module cache, which
-          // may be outside an SPM sandbox (currently only supported on MacOS).  Instead, force it
-          // into the plugin work directory, and thus into the sandbox.
-          "-module-cache-path",
-          context.pluginWorkDirectory.appending("clang-module-cache").platformString ],
-        additionalSources: [])
-
     case .preInstalled(file: let pathToExecutable):
       return .init(
         executable: pathToExecutable.repaired, argumentPrefix: [], additionalSources: [])
@@ -352,9 +341,6 @@ public enum SPMBuildCommand {
 
   /// A command-line tool to be invoked.
   public enum Executable {
-
-    /// Swift itself.
-    case swift
 
     /// The executable target named `name` in this package
     case targetInThisPackage(name: String)
