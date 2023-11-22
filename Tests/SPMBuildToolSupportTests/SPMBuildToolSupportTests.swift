@@ -1,6 +1,5 @@
 import XCTest
 import LibWithResource
-import LibWithGeneratedSource
 import Foundation
 
 final class ResourceGenerationTests: XCTestCase {
@@ -21,8 +20,4 @@ final class ResourceGenerationTests: XCTestCase {
     XCTAssert(content2.hasSuffix("\n# PROCESSED!\n"))
   }
 
-  func testSourceGeneration() throws {
-    XCTAssertEqual(generatedValues.0, "Zero")
-    XCTAssertEqual(generatedValues.1, "One")
-  }
 }

@@ -15,7 +15,7 @@ private let pathEnvironmentVariable = osIsWindows ? "Path" : "PATH"
 private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
 
 /// The file extension applied to binary executables
-public let executableSuffix = osIsWindows ? ".exe" : ""
+private let executableSuffix = osIsWindows ? ".exe" : ""
 
 /// The name of the file that would be run by a “`swift`” command.
 private let swiftExecutableName = "swift" + executableSuffix

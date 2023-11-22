@@ -16,14 +16,6 @@ let package = Package(
   products: [],
 
   targets: [
-    // ----------------- Demonstrates a plugin running a swift script --------------
-
-    // This plugin runs a swift script to generate .swift files.
-    .plugin(name: "SwiftCommandDemoPlugin", capability: .buildTool()),
-
-    // The target into which those generated files are compiled.
-    .target(name: "LibWithGeneratedSource", plugins: ["SwiftCommandDemoPlugin"]),
-
     // ----------------- Demonstrates a plugin running an executable target --------------
 
     // This plugin causes an invocation of the executable GenerateResource target below.
@@ -50,14 +42,14 @@ let package = Package(
     // An app that uses the resources in the above library
     .executableTarget(
       name: "AppWithResource", dependencies: ["LibWithResource"],
-      // -parse-as-library is needed to make the @main directive work on Windows.
+      // -parse-as-library is needed to make the @main directive work.
       swiftSettings: [ .unsafeFlags(["-parse-as-library"]) ]),
 
     // ----------------- Tests that prove this all works. --------------
 
     .testTarget(
       name: "SPMBuildToolSupportTests",
-      dependencies: ["LibWithResource", "LibWithGeneratedSource"]
+      dependencies: ["LibWithResource"]
     ),
 
   ]
