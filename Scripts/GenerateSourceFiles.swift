@@ -1,7 +1,11 @@
 // A command-line script used to generate source files.
 import Foundation
 
-let usage = "Usage: \(CommandLine.arguments.first!) -o <outputDirectory> <inputFiles>..."
+struct UsageError: Error, CustomStringConvertible {
+  var description: String {
+    "Usage: \(CommandLine.arguments.first!) -o <outputDirectory> <inputFiles>..."
+  }
+}
 
 func main() throws {
   var args = CommandLine.arguments.dropFirst()
@@ -17,9 +21,7 @@ func main() throws {
     }
   }
 
-  if outputDirectory == nil {
-    fatalError(usage)
-  }
+  if outputDirectory == nil { throw UsageError() }
 
     // The generated ".swift" files that should be compiled into the target
   let outputFiles = inputFiles.map {
@@ -34,4 +36,8 @@ func main() throws {
   }
 }
 
-try! main()
+do {
+  try main()
+} catch let e {
+  fatalError("\(e)")
+}
