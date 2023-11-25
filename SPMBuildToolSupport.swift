@@ -92,7 +92,7 @@ extension PackagePlugin.PluginContext {
       throw Failure(description: "No executable invoked as \(command) found in: \(searchPath)")
     }
 
-    return URL(fileURLWithPath: String(p).dropLast()).spmPath
+    return URL(fileURLWithPath: String(p.dropLast())).spmPath
   }
 
   func swiftToolchainExecutable(invokedAs command: String) throws -> PackagePlugin.Path {
