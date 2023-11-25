@@ -8,20 +8,28 @@ let osIsWindows = true
 let osIsWindows = false
 #endif
 
-/// The name of the environment variable containing the executable search path.
-private let pathEnvironmentVariable = osIsWindows ? "Path" : "PATH"
-
 /// The separator between elements of the executable search path.
 private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
 
-/// The file extension applied to binary executables
-private let executableSuffix = osIsWindows ? ".exe" : ""
-
-/// The name of the file that would be run by a “`swift`” command.
-private let swiftExecutableName = "swift" + executableSuffix
-
 /// The environment variables of the running process.
-private var envVars: [String: String] { ProcessInfo.processInfo.environment }
+///
+/// On platforms where environment variable names are case-insensitive (Windows), the keys have all
+/// been normalized to upper case, so looking up a variable value from this dictionary by a name
+/// that isn't all-uppercase is a non-portable operation.
+private let environmentVariables = osIsWindows ?
+  Dictionary(
+    uniqueKeysWithValues: ProcessInfo.processInfo.environment.lazy.map {
+      x in (key: x.key.uppercased(), value: x.value)
+    })
+  : ProcessInfo.processInfo.environment
+
+
+// The directories searched for command-line commands having no directory qualification.
+private var executableSearchPath: [URL] {
+  (environmentVariables["PATH"] ?? "")
+    .split(separator: pathEnvironmentSeparator)
+    .map { URL(fileURLWithPath: String($0)) }
+}
 
 private extension URL {
 
@@ -32,49 +40,79 @@ private extension URL {
 
 }
 
+
 extension PackagePlugin.PluginContext {
 
-  /// Returns the binary executable file that would be invoked as `command` from the command
-  /// line if the executable search path in the environment was `searchPath`, or `nil` if no such
-  /// file can be found.
-  public func firstBinaryExecutable(
-    in searchPath: [URL], invocableAs command: String
-  ) -> PackagePlugin.Path? {
+  func makeScratchDirectory() -> URL {
+    for _ in 0..<10 {
+      do {
+        let d = pluginWorkDirectory.url/UUID().uuidString
+        try FileManager().createDirectory(at: d, withIntermediateDirectories: false)
+        return d
+      }
+      catch {}
+    }
 
-    searchPath.lazy.map { $0/(command + executableSuffix) }
-      .first(where: { FileManager().isExecutableFile(atPath: $0.path) }).map(\.spmPath)
-
+    fatalError("Could not create a temporary directory after 10 tries.")
   }
 
-  // The directories searched for command-line commands having no directory qualification.
-  private var executableSearchPath: [URL] {
-    (envVars[pathEnvironmentVariable] ?? "")
-      .split(separator: pathEnvironmentSeparator)
-      .map { URL(fileURLWithPath: String($0)) }
-  }
-
-  /// A Swift toolchain executable, if possible from the toolchain executing the current build.
+  /// Returns the binary executable file that would be invoked as `command` from the command line if
+  /// the executable search path in the environment was `searchPath`.
   ///
-  /// Throws if no executable tool can be found for the given command.
-  public func swiftTool(_ command: String = "swift") throws -> PackagePlugin.Path {
-    let path = executableSearchPath
+  /// - Throws if no such binary can be found
+  /// - Note: the current directory is only searched if it appears in `searchPath`; it is not
+  ///   considered first as in Windows shells.
+  func executable(
+    invokedAs command: String, searching searchPath: [URL]
+  ) throws -> PackagePlugin.Path {
+    if !osIsWindows {
+      if let r = searchPath.lazy.map({ $0/(command) })
+           .first(where: { FileManager().isExecutableFile(atPath: $0.path) }).map(\.spmPath)
+      {
+        return r
+      }
+      throw Failure(description: "No executable invoked as \(command) found in: \(searchPath)")
+    }
 
-    // Try to identify the current Swift Toolchain/ directory.
-    //
-    // SwiftPM seems to put a descendant of that directory, with the following suffix, into the
-    // executable search path when plugins are run
+    var subshellEnvironment = environmentVariables
+    subshellEnvironment["PATH"] = searchPath.map(\.platformString).joined(separator: ":")
+
+    let whereCommand
+      = URL(fileURLWithPath: environmentVariables["WINDIR"]!)/"System32"/"where.exe"
+
+    // Use an empty working directory to shield Windows from finding it in the current directory,
+    // should it happen to contain an appropriately-named executable.
+    let t = makeScratchDirectory()
+    defer { _ = try? FileManager().removeItem(at: t) } // ignore if we fail to remove it.
+
+    guard let p = try? Process.commandOutput(
+            whereCommand, arguments: [command],
+            environment: subshellEnvironment, workingDirectory: t)
+    else {
+      throw Failure(description: "No executable invoked as \(command) found in: \(searchPath)")
+    }
+
+    // FIXME: do we need to trim some trailing whitespace here?
+    return URL(fileURLWithPath: p).spmPath
+  }
+
+  func swiftToolchainExecutable(invokedAs command: String) throws -> PackagePlugin.Path {
+    return try executable(invokedAs: command, searching: toolchainBinDirectory().map { [$0] } ?? [])
+  }
+
+  /// Returns the current Swift `Toolchain/bin` directory, or `nil` if it can't be identified.
+  private func toolchainBinDirectory() throws -> URL? {
+    // SwiftPM seems to put a descendant of the toolchain directory, with the following suffix, into
+    // the executable search path when plugins are run
     let pluginAPISuffix = ["lib", "swift", "pm", "PluginAPI"]
 
-    if let toolchain = path.lazy.compactMap({ $0.sansPathComponentSuffix(pluginAPISuffix) }).first
-    {
-      if let s = firstBinaryExecutable(in: [toolchain/"bin"], invocableAs: command) { return s }
-    }
-    print("Warning: could not identify current toolchain; looking for \(command) in PATH.")
+    // The toolchain directory should have a bin/ directory containing a "swift" executable.
+    guard let toolchain = executableSearchPath.lazy
+            .compactMap({ $0.sansPathComponentSuffix(pluginAPISuffix) })
+            .first(where: { (try? executable(invokedAs: "swift", searching: [$0/"bin"])) != nil })
+    else { throw Failure(description: "Could not locate Swift toolchain bin directory.") }
 
-    if let s = firstBinaryExecutable(in: path, invocableAs: command) { return s }
-    print("Warning: could not find swift in PATH; asking SPM for the \(command) tool.")
-
-    return try self.tool(named: command).path
+    return toolchain/"bin"
   }
 
 }
@@ -230,11 +268,10 @@ public extension SPMBuildCommand.Executable {
 
   fileprivate func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
-    case .preInstalled(file: let pathToExecutable):
-      return .init(
-        executable: pathToExecutable.repaired, argumentPrefix: [], additionalSources: [])
+    case .existingFile(let p):
+      return .init(executable: p.repaired, argumentPrefix: [], additionalSources: [])
 
-    case .targetInThisPackage(name: let targetName):
+    case .targetInThisPackage(let targetName):
       if !osIsWindows {
         return try .init(
           executable: context.tool(named: targetName).path.repaired,
@@ -246,7 +283,8 @@ public extension SPMBuildCommand.Executable {
       // (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716),
       // Invoke swift reentrantly to run the tool.
 
-      let noReentrantBuild = envVars["SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD"] != nil
+      let noReentrantBuild
+        = environmentVariables["SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD"] != nil
       let packageDirectory = context.package.directory.url
 
       // Locate the scratch directory for reentrant builds inside the package directory to work
@@ -259,7 +297,7 @@ public extension SPMBuildCommand.Executable {
         ]
 
       return try .init(
-        executable: context.swiftTool(),
+        executable: try context.swiftToolchainExecutable(invokedAs: "swift"),
         argumentPrefix: [
           "run",
           // Only Macs currently use sandboxing, but nested sandboxes are prohibited, so for future
@@ -276,8 +314,19 @@ public extension SPMBuildCommand.Executable {
           + [ targetName ],
         additionalSources:
           context.package.sourceDependencies(ofTargetNamed: targetName))
+
+    case .command(let c):
+      return try .init(
+        executable: context.executable(invokedAs: c, searching: executableSearchPath),
+        argumentPrefix: [], additionalSources: [])
+
+    case .swiftToolchainCommand(let c):
+      return try .init(
+        executable: context.swiftToolchainExecutable(invokedAs: c),
+        argumentPrefix: [], additionalSources: [])
     }
   }
+
 }
 
 fileprivate extension SPMBuildCommand {
@@ -342,12 +391,19 @@ public enum SPMBuildCommand {
   /// A command-line tool to be invoked.
   public enum Executable {
 
-    /// The executable target named `name` in this package
-    case targetInThisPackage(name: String)
+    /// The executable target in this package, by name
+    case targetInThisPackage(String)
 
-    /// The executable at `file`, an absolute path outside the build directory of the package being
-    /// built.
-    case preInstalled(file: PackagePlugin.Path)
+    /// An executable file not that exists before the build starts.
+    case existingFile(PackagePlugin.Path)
+
+    /// an executable found in the environment's executable search path, given the name you'd use to
+    /// invoke it in a shell (e.g. "find").
+    case command(String)
+
+    /// an executable found in the currently running swift toolchain, given the name you'd use to
+    /// invoke it in a shell (e.g. "swiftc").
+    case swiftToolchainCommand(String)
   }
 
   /// A command that runs when any of its output files are needed by
@@ -443,7 +499,9 @@ private extension Process {
   /// Runs `executable` with the given command line `arguments` and returns the text written to its
   /// standard output, throwing `NonzeroExit` if the command fails.
   static func commandOutput(
-    _ executable: URL, arguments: [String] = []) throws -> String {
+    _ executable: URL, arguments: [String] = [], environment: [String: String]? = nil,
+    workingDirectory: URL? = nil
+  ) throws -> String {
 
     let p = Process()
     let pipes = (standardOutput: Pipe(), standardError: Pipe())
@@ -451,6 +509,8 @@ private extension Process {
     p.arguments = arguments
     p.standardOutput = pipes.standardOutput
     p.standardError = pipes.standardError
+    p.environment = environment
+    p.currentDirectoryURL = workingDirectory
     try p.run()
     p.waitUntilExit()
 
@@ -499,4 +559,8 @@ extension Pipe {
     String(decoding: fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
   }
 
+}
+
+private struct Failure: Error, CustomStringConvertible {
+  let description: String
 }
