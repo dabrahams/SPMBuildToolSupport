@@ -92,8 +92,7 @@ extension PackagePlugin.PluginContext {
       throw Failure(description: "No executable invoked as \(command) found in: \(searchPath)")
     }
 
-    // FIXME: do we need to trim some trailing whitespace here?
-    return URL(fileURLWithPath: p).spmPath
+    return URL(fileURLWithPath: String(p).dropLast()).spmPath
   }
 
   func swiftToolchainExecutable(invokedAs command: String) throws -> PackagePlugin.Path {
