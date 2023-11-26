@@ -332,11 +332,6 @@ private extension SPMBuildCommand.Executable {
       return try .init(
         executable: context.executable(invokedAs: c, searching: executableSearchPath),
         argumentPrefix: [], additionalSources: [])
-
-    case .swiftToolchainCommand(let c):
-      return try .init(
-        executable: context.swiftToolchainExecutable(invokedAs: c),
-        argumentPrefix: [], additionalSources: [])
     }
   }
 
@@ -416,9 +411,6 @@ public enum SPMBuildCommand {
     /// invoke it in a shell (e.g. "find").
     case command(String)
 
-    /// an executable found in the currently running swift toolchain, given the name you'd use to
-    /// invoke it in a shell (e.g. "swiftc").
-    case swiftToolchainCommand(String)
   }
 
   /// A command that runs when any of its output files are needed by

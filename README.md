@@ -35,15 +35,13 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
 
 2. Make your plugin inherit from `SPMBuildToolPlugin` and implement its `buildCommands` method
    (instead of inheriting from `BuildToolPlugin` and implementing `createBuildCommands`).  This
-   project contains several examples.  There are four kinds of executables that can run build
+   project contains several examples.  There are three kinds of executables that can run build
    commands:
 
    - `.targetInThisPackage`: an executable target in the same package as the plugin.
    - `.file`: a specific executable file.
    - `.command`: an executable found in the environment's executable search path,
      given the name you'd use to invoke it in a shell (e.g. "find").
-   - `.swiftToolchainCommand`: an executable found in the currently running swift toolchain, given
-     the name you'd use to invoke it in a shell (e.g. "swiftc").
 
 3. To turn a `PackagePlugin.Path` or a `Foundation.URL` into a string that will be recognized by the
    host OS (say, to pass on a command line), use its `.platformString` property.  **Do not use
