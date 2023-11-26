@@ -54,8 +54,21 @@ let package = Package(
 
     // The target into which the resulting source files are incorporated.
     .target(
-      name: "LibWithGeneratedSource",
+      name: "LibWithSourceGeneratedByExecutableFile",
       plugins: ["ExecutableFileDemoPlugin"]
+    ),
+
+    // ------ Demonstrates a plugin running a command by name as if in a shell ------
+
+    // This plugin invokes one of the scripts in the Scripts/ directory.
+    .plugin(
+      name: "CommandDemoPlugin", capability: .buildTool()
+    ),
+
+    // The target into which the resulting source files are incorporated.
+    .target(
+      name: "LibWithSourceGeneratedByCommand",
+      plugins: ["CommandDemoPlugin"]
     ),
 
     // ----------------- Tests that prove this all works. --------------
