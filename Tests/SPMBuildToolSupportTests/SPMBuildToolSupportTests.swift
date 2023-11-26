@@ -2,7 +2,7 @@ import XCTest
 import LibWithResource
 import Foundation
 
-final class ResourceGenerationTests: XCTestCase {
+final class SPMBuildToolSupportTests: XCTestCase {
 
   func testResourceGeneration() throws {
     guard let test1 = resourceBundle.url(forResource: "Test1.out", withExtension: nil) else {
