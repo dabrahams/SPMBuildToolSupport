@@ -31,15 +31,23 @@ private var executableSearchPath: [URL] {
     .map { URL(fileURLWithPath: String($0)) }
 }
 
-private extension URL {
+public extension URL {
 
   /// Returns `root` with the additional path component `x` appended.
-  static func / (_ root: URL, x: String) -> URL {
+  static func / (_ root: Self, x: String) -> URL {
     root.appendingPathComponent(x)
   }
 
 }
 
+public extension Path {
+
+  /// Returns `root` with the additional path component `x` appended.
+  static func / (_ root: Self, x: String) -> Self {
+    root.appending([x])
+  }
+
+}
 
 extension PackagePlugin.PluginContext {
 

@@ -1,2 +1,4 @@
-// If this compiles, it proves the expected Swift sources were generated.
-public let generatedValues = (generatedValue0, generatedValue1)
+// `echoed` is in a generated Swift source file, so if this compiles, it proves the expected sources
+// were generated.
+
+public let dependentOnEcho = echoed

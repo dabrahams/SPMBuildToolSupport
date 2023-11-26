@@ -45,6 +45,18 @@ let package = Package(
       // -parse-as-library is needed to make the @main directive work.
       swiftSettings: [ .unsafeFlags(["-parse-as-library"]) ]),
 
+    // -------------- Demonstrates a plugin running an existing executable target --------------
+
+    .plugin(
+      name: "ExistingExecutableDemoPlugin", capability: .buildTool()
+    ),
+
+    // The target into whose resource bundle which the result is copied
+    .target(
+      name: "LibWithGeneratedSource",
+      plugins: ["ExistingExecutableDemoPlugin"]
+    ),
+
     // ----------------- Tests that prove this all works. --------------
 
     .testTarget(
