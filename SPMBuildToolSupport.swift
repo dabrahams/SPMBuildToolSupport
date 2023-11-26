@@ -82,8 +82,8 @@ extension PackagePlugin.PluginContext {
       throw Failure(description: "No executable invoked as \(command) found in: \(searchPath)")
     }
 
-    var subshellEnvironment = environmentVariables
-    subshellEnvironment["PATH"] = searchPath.map(\.platformString).joined(separator: ":")
+    var subshellEnvironment = ProcessInfo.processInfo.environment
+    subshellEnvironment["Path"] = searchPath.map(\.platformString).joined(separator: ";")
 
     let whereCommand
       = URL(fileURLWithPath: environmentVariables["WINDIR"]!)/"System32"/"where.exe"
@@ -93,12 +93,12 @@ extension PackagePlugin.PluginContext {
     let t = makeScratchDirectory()
     defer { _ = try? FileManager().removeItem(at: t) } // ignore if we fail to remove it.
 
-    guard let p = try? Process.commandOutput(
+    let p = try Process.commandOutput(
             whereCommand, arguments: [command],
             environment: subshellEnvironment, workingDirectory: t)
-    else {
-      throw Failure(description: "No executable invoked as \(command) found in: \(searchPath)")
-    }
+//    else {
+//      throw Failure(description: "No executable invoked as \(command) found in: \(searchPath)")
+//    }
 
     return URL(fileURLWithPath: String(p.dropLast())).spmPath
   }

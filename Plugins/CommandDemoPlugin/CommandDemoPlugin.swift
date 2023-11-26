@@ -6,7 +6,7 @@ extension Path {
   /// A representation of self suitable for use as the target of an output redirection in the
   /// platform's shell.
   var shellQuoted: String {
-    if osIsWindows { return "\"\(repaired.platformString)\"" }
+    if osIsWindows { return "\"\(platformString)\"" }
     let inner = repaired.platformString
       .replacingOccurrences(of: #"\"#, with: #"\\"#)
       .replacingOccurrences(of: "'", with: #"\'"#)
@@ -24,17 +24,18 @@ struct CommandDemoPlugin: SPMBuildToolPlugin {
 
     let outputFile = context.pluginWorkDirectory/"CommandOutput.swift"
 
+    let shell = osIsWindows ? "cmd" : "sh"
+    let arguments = (osIsWindows ? [ "/Q", "/C"] : ["-c"])
+    + [ "echo let commandOutput = 1 >\(outputFile.platformString)" ]
+
     return [
       .buildCommand(
-        displayName: "Running Command",
-        executable: .command(osIsWindows ? "cmd" : "sh"),
+        displayName: "Running \([shell] + arguments)",
+        executable: .command(shell),
         // Note the use of `.platformString` on these paths rather
         // than `.string`.  Your executable tool may have trouble
         // finding files and directories with `.string`.
-        arguments: [
-          osIsWindows ? "/c" : "-c",
-          "echo let commandOutput = 1 > \(outputFile.shellQuoted)"
-        ],
+        arguments: arguments,
         inputFiles: [],
         outputFiles: [outputFile])
     ]
