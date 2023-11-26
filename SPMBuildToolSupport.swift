@@ -275,14 +275,15 @@ public extension SPMBuildCommand.Executable {
 
   fileprivate func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
-    case .existingFile(let p):
-      return .init(executable: p.repaired, argumentPrefix: [], additionalSources: [])
+    case .file(let p):
+      return .init(executable: p.repaired, argumentPrefix: [], additionalSources: [p.url])
 
     case .targetInThisPackage(let targetName):
       if !osIsWindows {
         return try .init(
           executable: context.tool(named: targetName).path.repaired,
-          argumentPrefix: [], additionalSources: [])
+          argumentPrefix: [],
+          additionalSources: [])
       }
 
       // Instead of depending on context.tool(named:), which demands a declared dependency on the
@@ -368,7 +369,9 @@ fileprivate extension SPMBuildCommand {
         executable: i.executable,
         arguments: i.argumentPrefix + arguments,
         environment: environment,
-        inputFiles: inputFiles.map(\.repaired) + (pluginSources + i.additionalSources).map(\.spmPath),
+        inputFiles: inputFiles.map(\.repaired)
+          + (pluginSources + i.additionalSources).map(\.spmPath)
+          + [ i.executable.repaired ],
         outputFiles: outputFiles.map(\.repaired))
 
     case .prebuildCommand(
@@ -402,7 +405,7 @@ public enum SPMBuildCommand {
     case targetInThisPackage(String)
 
     /// An executable file not that exists before the build starts.
-    case existingFile(PackagePlugin.Path)
+    case file(PackagePlugin.Path)
 
     /// an executable found in the environment's executable search path, given the name you'd use to
     /// invoke it in a shell (e.g. "find").

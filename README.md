@@ -6,6 +6,8 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
 - Bugs:
   - Plugin outputs are not automatically rebuilt when a plugin's source changes
     (https://github.com/apple/swift-package-manager/issues/6936)
+  - Plugin outputs are not automatically rebuilt when a plugin's executable changes
+    (https://github.com/apple/swift-package-manager/issues/6936)
   - Broken file system path handling on Windows
     (https://github.com/apple/swift-package-manager/issues/6994)
   - If you use a plugin to generate tests or source for an executable, on Windows, SPM will try to
@@ -37,7 +39,7 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
    commands:
 
    - `.targetInThisPackage`: an executable target in the same package as the plugin.
-   - `.existingFile`: a specific executable file that exists before the build starts.
+   - `.file`: a specific executable file.
    - `.command`: an executable found in the environment's executable search path,
      given the name you'd use to invoke it in a shell (e.g. "find").
    - `.swiftToolchainCommand`: an executable found in the currently running swift toolchain, given
