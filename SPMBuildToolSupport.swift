@@ -96,28 +96,33 @@ extension PackagePlugin.PluginContext {
     let p = try Process.commandOutput(
             whereCommand, arguments: [command],
             environment: subshellEnvironment, workingDirectory: t)
-//    else {
-//      throw Failure(description: "No executable invoked as \(command) found in: \(searchPath)")
-//    }
 
     return URL(fileURLWithPath: String(p.dropLast())).spmPath
   }
 
-  func swiftToolchainExecutable(invokedAs command: String) throws -> PackagePlugin.Path {
-    return try executable(invokedAs: command, searching: toolchainBinDirectory().map { [$0] } ?? [])
+  /// Returns the executable from the current Swift toolchain that could be invoked as `commandName`
+  /// from a shell.
+  ///
+  /// - Warning: only works on Windows, throwing unconditionally on other platforms.
+  func swiftToolchainExecutable(invokedAs commandName: String) throws -> PackagePlugin.Path {
+    return try executable(invokedAs: commandName, searching: [ toolchainBinDirectory() ])
   }
 
-  /// Returns the current Swift `Toolchain/bin` directory, or `nil` if it can't be identified.
-  private func toolchainBinDirectory() throws -> URL? {
+  /// Returns the current Swift `Toolchain/bin` directory.
+  ///
+  /// - Warning: only works on Windows, throwing unconditionally on other platforms.
+  private func toolchainBinDirectory() throws -> URL {
     // SwiftPM seems to put a descendant of the toolchain directory, with the following suffix, into
-    // the executable search path when plugins are run
+    // the executable search path when plugins are run on Windows
     let pluginAPISuffix = ["lib", "swift", "pm", "PluginAPI"]
 
     // The toolchain directory should have a bin/ directory containing a "swift" executable.
     guard let toolchain = executableSearchPath.lazy
             .compactMap({ $0.sansPathComponentSuffix(pluginAPISuffix) })
             .first(where: { (try? executable(invokedAs: "swift", searching: [$0/"bin"])) != nil })
-    else { throw Failure(description: "Could not locate Swift toolchain bin directory.") }
+    else {
+      throw Failure(description: "Could not locate Swift toolchain bin directory in path.")
+    }
 
     return toolchain/"bin"
   }
@@ -141,13 +146,13 @@ extension URL {
   }
 
   /// The representation used by the native filesystem.
-  internal var platformString: String {
+  public var platformString: String {
     self.withUnsafeFileSystemRepresentation { String(cString: $0!) }
   }
 
 }
 
-fileprivate extension PackagePlugin.Target {
+public extension PackagePlugin.Target {
 
   /// The source files.
   var allSourceFiles: [URL] {
@@ -157,7 +162,7 @@ fileprivate extension PackagePlugin.Target {
 
 }
 
-fileprivate extension PackagePlugin.Package {
+public extension PackagePlugin.Package {
 
   /// The source files in this package on which the given executable depends.
   func sourceDependencies(ofTargetNamed targetName: String) throws -> [URL] {
@@ -260,7 +265,7 @@ extension SPMBuildToolPlugin {
 
 }
 
-public extension SPMBuildCommand.Executable {
+private extension SPMBuildCommand.Executable {
 
   /// A partial translation to SPM plugin inputs of an invocation.
   struct SPMInvocation {
@@ -273,7 +278,7 @@ public extension SPMBuildCommand.Executable {
     let additionalSources: [URL]
   }
 
-  fileprivate func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
+  func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
     case .file(let p):
       return .init(executable: p.repaired, argumentPrefix: [], additionalSources: [p.url])
