@@ -71,6 +71,18 @@ let package = Package(
       plugins: ["CommandDemoPlugin"]
     ),
 
+    // ------ Demonstrates a plugin running a single-file Swift script ------
+
+    // This plugin invokes one of the scripts in the Scripts/ directory.
+    .plugin(
+      name: "SwiftScriptDemoPlugin", capability: .buildTool()),
+
+    // The target into which the resulting source files are incorporated.
+    .target(
+      name: "LibWithSourceGeneratedBySwiftScript",
+      plugins: ["SwiftScriptDemoPlugin"]
+    ),
+
     // ----------------- Tests that prove this all works. --------------
 
     .testTarget(

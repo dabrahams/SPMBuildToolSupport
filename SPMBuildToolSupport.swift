@@ -280,7 +280,11 @@ private extension SPMBuildCommand.Executable {
 
     /// Creates an instance with the given properties.
     init(
-      executable: PackagePlugin.Path, argumentPrefix: [String] = [], additionalSources: [URL] = [])
+      executable: PackagePlugin.Path,
+      argumentPrefix: [String] = [],
+      additionalSources: [URL] = [],
+      additionalCommands: [SPMBuildCommand] = []
+    )
     {
       self.executable = executable
       self.argumentPrefix = argumentPrefix
@@ -292,7 +296,7 @@ private extension SPMBuildCommand.Executable {
   func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
     case .file(let p):
-      return .init(executable: p.repaired, argumentPrefix: [], additionalSources: [])
+      return .init(executable: p.repaired, argumentPrefix: [])
 
     case .targetInThisPackage(let targetName):
       if !osIsWindows {
@@ -340,14 +344,8 @@ private extension SPMBuildCommand.Executable {
       return try .init(
         executable: context.executable(invokedAs: c, searching: executableSearchPath))
 
-    case .swiftScript(let f):
-      fatalError()
-      /*
-      return try .init(
-        executable:
-          context.pluginWorkDirectory.repaired/UUID().uuidString/"runner.exe",
-          argumentPrefix: [], additionalSources: [])
-       */
+    case .swiftScript:
+      fatalError("unreachable")
     }
   }
 
@@ -368,6 +366,30 @@ fileprivate extension SPMBuildCommand {
            inputFiles: let inputFiles,
            outputFiles: let outputFiles,
            pluginSourceFile: let pluginSourceFile):
+
+      if case let .swiftScript(f) = executable {
+        let scratch = context.pluginWorkDirectory.repaired/UUID().uuidString
+        let runner = scratch/"runner.exe"
+
+        return try
+          Self.buildCommand(
+            displayName: "Compiling \(f.platformString)",
+            executable: .command("swiftc"),
+            arguments: [f.platformString, "-o", runner.platformString],
+            inputFiles: [f], outputFiles: [runner]).spmCommands(in: context)
+          + Self.buildCommand(
+            displayName: "Running \(runner.platformString)",
+            executable: .file(runner),
+            arguments: arguments,
+            inputFiles: [runner], outputFiles: outputFiles).spmCommands(in: context)
+          + Self.buildCommand(
+            displayName: "Cleanup",
+            executable: .command(osIsWindows ? "cmd" : "sh"),
+            arguments: osIsWindows ? ["/Q", "/C", "del /F/S/Q \"\(scratch)\""]
+              : ["-c", "rm -rf '\(scratch)'"],
+            inputFiles: outputFiles, outputFiles: []).spmCommands(in: context)
+      }
+
 
       let i = try executable.spmInvocation(in: context)
 
