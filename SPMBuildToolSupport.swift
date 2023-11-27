@@ -347,41 +347,32 @@ private extension SPMBuildCommand.Executable {
     case .swiftScript(let s):
       let work = context.pluginWorkDirectory.repaired
       let scratch = work/UUID().uuidString
-      return try .init(
-        executable:
-          context.executable(invokedAs: osIsWindows ? "cmd" : "bash", searching: executableSearchPath),
-        argumentPrefix: (
-          osIsWindows ? [
-            "/V:ON", "/C",
-            #"""
-            set SCRATCH=%1
-            set SCRIPT=%2
-            shift /2
-            mkdir %SCRATCH%
-            swiftc -v %SCRIPT% -o %SCRATCH%\runner.exe
-            rem if %errorlevel% neq 0 exit /b %errorlevel%
-            %SCRATCH%\runner %*
-            if %errorlevel% neq 0 exit /b %errorlevel%
-            """#
-          ] : [
-            "-eo", "pipefail", "-c",
-            """
-              SCRATCH="$1"
-              SCRIPT="$2"
-              shift 2
-              mkdir -p "$SCRATCH"
-              swiftc "$SCRIPT" -o "$SCRATCH"/runner
-              "$SCRATCH"/runner "$@"
-              """,
-            "ignored", // $0
-          ])
-      + [
+
+      // On Windows, SPM doesn't work unless git is in the Path, and we can find a working bash
+      // relative to that as part of the git installation.
+      let bash = try osIsWindows
+        ? context.executable(invokedAs: "git", searching: executableSearchPath)
+        .removingLastComponent().removingLastComponent()/"bin"/"bash.exe"
+        : context.executable(invokedAs: "bash", searching: executableSearchPath)
+
+      return .init(
+        executable: bash,
+        argumentPrefix: [
+          "-eo", "pipefail", "-c",
+          """
+            SCRATCH="$1"
+            SCRIPT="$2"
+            shift 2
+            mkdir -p "$SCRATCH"
+            swiftc "$SCRIPT" -o "$SCRATCH"/runner
+            "$SCRATCH"/runner "$@"
+            """,
+          "ignored", // $0
           scratch.platformString,
           s.platformString,
         ])
     }
   }
-
 }
 
 fileprivate extension SPMBuildCommand {
