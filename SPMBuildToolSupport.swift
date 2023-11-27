@@ -364,7 +364,7 @@ private extension SPMBuildCommand.Executable {
             SCRIPT="$2"
             shift 2
             mkdir -p "$SCRATCH"
-            swiftc "$SCRIPT" -o "$SCRATCH"/runner
+            swiftc -module-cache-path "$SCRATCH"/module-cache "$SCRIPT" -o "$SCRATCH"/runner
             "$SCRATCH"/runner "$@"
             """,
           "ignored", // $0
