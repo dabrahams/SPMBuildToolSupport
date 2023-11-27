@@ -344,8 +344,25 @@ private extension SPMBuildCommand.Executable {
       return try .init(
         executable: context.executable(invokedAs: c, searching: executableSearchPath))
 
-    case .swiftScript:
-      fatalError("unreachable")
+    case .swiftScript(let s):
+      let work = context.pluginWorkDirectory.repaired
+      let scratch = work/UUID().uuidString
+      return try .init(
+        executable: context.executable(invokedAs: "bash", searching: executableSearchPath),
+        argumentPrefix: [
+          "-eo", "pipefail", "-c",
+          """
+          SCRATCH="$1"
+          SCRIPT="$2"
+          shift 2
+          mkdir -p "$SCRATCH"
+          swiftc "$SCRIPT" -o "$SCRATCH"/runner
+          "$SCRATCH"/runner "$@"
+          """,
+          "ignored", // $0
+          scratch.platformString,
+          s.platformString,
+        ])
     }
   }
 
@@ -366,30 +383,6 @@ fileprivate extension SPMBuildCommand {
            inputFiles: let inputFiles,
            outputFiles: let outputFiles,
            pluginSourceFile: let pluginSourceFile):
-
-      if case let .swiftScript(f) = executable {
-        let scratch = context.pluginWorkDirectory.repaired/UUID().uuidString
-        let runner = scratch/"runner.exe"
-
-        return try
-          Self.buildCommand(
-            displayName: "Compiling \(f.platformString)",
-            executable: .command("swiftc"),
-            arguments: [f.platformString, "-o", runner.platformString],
-            inputFiles: [f], outputFiles: [runner]).spmCommands(in: context)
-          + Self.buildCommand(
-            displayName: "Running \(runner.platformString)",
-            executable: .file(runner),
-            arguments: arguments,
-            inputFiles: [runner], outputFiles: outputFiles).spmCommands(in: context)
-          + Self.buildCommand(
-            displayName: "Cleanup",
-            executable: .command(osIsWindows ? "cmd" : "sh"),
-            arguments: osIsWindows ? ["/Q", "/C", "del /F/S/Q \"\(scratch)\""]
-              : ["-c", "rm -rf '\(scratch)'"],
-            inputFiles: outputFiles, outputFiles: []).spmCommands(in: context)
-      }
-
 
       let i = try executable.spmInvocation(in: context)
 
