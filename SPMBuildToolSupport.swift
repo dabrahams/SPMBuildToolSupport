@@ -348,18 +348,37 @@ private extension SPMBuildCommand.Executable {
       let work = context.pluginWorkDirectory.repaired
       let scratch = work/UUID().uuidString
       return try .init(
-        executable: context.executable(invokedAs: "bash", searching: executableSearchPath),
-        argumentPrefix: [
-          "-eo", "pipefail", "-c",
-          """
-          SCRATCH="$1"
-          SCRIPT="$2"
-          shift 2
-          mkdir -p "$SCRATCH"
-          swiftc "$SCRIPT" -o "$SCRATCH"/runner
-          "$SCRATCH"/runner "$@"
-          """,
-          "ignored", // $0
+        executable:
+          context.executable(invokedAs: osIsWindows ? "pwsh" : "bash", searching: executableSearchPath),
+        argumentPrefix: (
+          osIsWindows ? [
+            "-Command",
+            #"""
+            $ErrorActionPreference = "Stop"
+            & {
+              param (
+                [string]$SCRATCH,
+                [string]$SCRIPT,
+                [string[]]$args
+              )
+              mkdir $SCRATCH -Force
+              swiftc -v -Xlinker -v $SCRIPT -o $SCRATCH\runner.exe
+              & "$SCRATCH\runner.exe" $args
+            }
+            """#
+          ] : [
+            "-eo", "pipefail", "-c",
+            """
+              SCRATCH="$1"
+              SCRIPT="$2"
+              shift 2
+              mkdir -p "$SCRATCH"
+              swiftc "$SCRIPT" -o "$SCRATCH"/runner
+              "$SCRATCH"/runner "$@"
+              """,
+            "ignored", // $0
+          ])
+      + [
           scratch.platformString,
           s.platformString,
         ])
@@ -392,18 +411,24 @@ fileprivate extension SPMBuildCommand {
       let pluginSourceDirectory = URL(fileURLWithPath: pluginSourceFile).deletingLastPathComponent()
 
       // We could filter out directories, but why bother?
-      let pluginSources = try FileManager()
-        .subpathsOfDirectory(atPath: pluginSourceDirectory.path)
+      let pluginSources = try FileManager.default
+        .subpathsOfDirectory(atPath: pluginSourceDirectory.platformString)
         .map { pluginSourceDirectory.appendingPath($0) }
 
-      return [.buildCommand(
+      let executableSize = try FileManager
+        .default.attributesOfItem(atPath: i.executable.platformString)[FileAttributeKey.size] as! UInt64
+      let executableDependency = executableSize == 0 ? [] : [ i.executable.repaired ]
+      return [
+        .buildCommand(
         displayName: displayName,
         executable: i.executable,
         arguments: i.argumentPrefix + arguments,
         environment: environment,
         inputFiles: inputFiles.map(\.repaired)
           + (pluginSources + i.additionalSources).map(\.spmPath)
-          + [ i.executable.repaired ],
+      // Work around an SPM bug on Windows: the path to PWSH is some kind of zero-byte shortcut, and SPM
+      // complains that it doesn't exist if we try to depend on it.
+          + executableDependency,
         outputFiles: outputFiles.map(\.repaired))]
 
     case .prebuildCommand(
