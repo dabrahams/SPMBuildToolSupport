@@ -97,7 +97,7 @@ extension PackagePlugin.PluginContext {
             whereCommand, arguments: [command],
             environment: subshellEnvironment, workingDirectory: t)
 
-    return URL(fileURLWithPath: String(p.dropLast())).spmPath
+    return URL(fileURLWithPath: String(p.prefix { !$0.isNewline})).spmPath
   }
 
   /// Returns the executable from the current Swift toolchain that could be invoked as `commandName`
