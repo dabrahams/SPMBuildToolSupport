@@ -269,6 +269,7 @@ private extension SPMBuildCommand.Executable {
 
   /// A partial translation to SPM plugin inputs of an invocation.
   struct SPMInvocation {
+
     /// The executable that will actually run.
     let executable: PackagePlugin.Path
     /// The command-line arguments that must precede the ones specified by the caller.
@@ -276,6 +277,16 @@ private extension SPMBuildCommand.Executable {
     /// The source files that must be added as build dependencies if we want the tool
     /// to be re-run when its sources change.
     let additionalSources: [URL]
+
+    /// Creates an instance with the given properties.
+    init(
+      executable: PackagePlugin.Path, argumentPrefix: [String] = [], additionalSources: [URL] = [])
+    {
+      self.executable = executable
+      self.argumentPrefix = argumentPrefix
+      self.additionalSources = additionalSources
+    }
+
   }
 
   func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
@@ -285,10 +296,7 @@ private extension SPMBuildCommand.Executable {
 
     case .targetInThisPackage(let targetName):
       if !osIsWindows {
-        return try .init(
-          executable: context.tool(named: targetName).path.repaired,
-          argumentPrefix: [],
-          additionalSources: [])
+        return try .init(executable: context.tool(named: targetName).path.repaired)
       }
 
       // Instead of depending on context.tool(named:), which demands a declared dependency on the
@@ -330,8 +338,7 @@ private extension SPMBuildCommand.Executable {
 
     case .command(let c):
       return try .init(
-        executable: context.executable(invokedAs: c, searching: executableSearchPath),
-        argumentPrefix: [], additionalSources: [])
+        executable: context.executable(invokedAs: c, searching: executableSearchPath))
     }
   }
 
