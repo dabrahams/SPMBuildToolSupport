@@ -47,7 +47,7 @@ let package = Package(
 
     // ------ Demonstrates a plugin running an executable file with a known path ------
 
-    // This plugin invokes one of the scripts in the Scripts/ directory.
+    // This plugin invokes one of the scripts in the DemoScripts/ directory.
     .plugin(
       name: "ExecutableFileDemoPlugin", capability: .buildTool()
     ),
@@ -60,7 +60,7 @@ let package = Package(
 
     // ------ Demonstrates a plugin running a command by name as if in a shell ------
 
-    // This plugin invokes one of the scripts in the Scripts/ directory.
+    // This plugin invokes one of the scripts in the DemoScripts/ directory.
     .plugin(
       name: "CommandDemoPlugin", capability: .buildTool()
     ),
@@ -73,7 +73,7 @@ let package = Package(
 
     // ------ Demonstrates a plugin running a single-file Swift script ------
 
-    // This plugin invokes one of the scripts in the Scripts/ directory.
+    // This plugin invokes one of the scripts in the DemoScripts/ directory.
     .plugin(
       name: "SwiftScriptDemoPlugin", capability: .buildTool()),
 

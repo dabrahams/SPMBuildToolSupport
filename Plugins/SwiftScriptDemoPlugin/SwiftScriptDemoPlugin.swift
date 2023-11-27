@@ -15,7 +15,7 @@ struct ExecutableFileDemoPlugin: SPMBuildToolPlugin {
     return [
       .buildCommand(
         displayName: "Running Echo1Into2.swift",
-        executable: .swiftScript(context.package.directory/"Scripts"/"Echo1Into2.swift"),
+        executable: .swiftScript(context.package.directory/"DemoScripts"/"Echo1Into2.swift"),
         arguments: [ "let swiftScriptOutput = 1", outputFile.platformString ],
         inputFiles: [],
         outputFiles: [outputFile])
