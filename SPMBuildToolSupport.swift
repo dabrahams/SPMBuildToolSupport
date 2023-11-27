@@ -355,8 +355,9 @@ fileprivate extension SPMBuildCommand {
 
       let i = try executable.spmInvocation(in: context)
 
-      /// Guess at files that constitute this plugin, the changing of which should cause outputs to be
-      /// regenerated (workaround for https://github.com/apple/swift-package-manager/issues/6936).
+      /// Guess at files that constitute this plugin, the changing of which should cause outputs to
+      /// be regenerated (workaround for
+      /// https://github.com/apple/swift-package-manager/issues/6936).
       let pluginSourceDirectory = URL(fileURLWithPath: pluginSourceFile).deletingLastPathComponent()
 
       // We could filter out directories, but why bother?
