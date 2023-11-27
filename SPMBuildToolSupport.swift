@@ -349,22 +349,19 @@ private extension SPMBuildCommand.Executable {
       let scratch = work/UUID().uuidString
       return try .init(
         executable:
-          context.executable(invokedAs: osIsWindows ? "pwsh" : "bash", searching: executableSearchPath),
+          context.executable(invokedAs: osIsWindows ? "cmd" : "bash", searching: executableSearchPath),
         argumentPrefix: (
           osIsWindows ? [
-            "-Command",
+            "/V:ON", "/C",
             #"""
-            $ErrorActionPreference = "Stop"
-            & {
-              param (
-                [string]$SCRATCH,
-                [string]$SCRIPT,
-                [string[]]$args
-              )
-              mkdir $SCRATCH -Force
-              swiftc -v -Xlinker -v $SCRIPT -o $SCRATCH\runner.exe
-              & "$SCRATCH\runner.exe" $args
-            }
+            set SCRATCH=%1
+            set SCRIPT=%2
+            shift /2
+            mkdir %SCRATCH%
+            swiftc -v %SCRIPT% -o %SCRATCH%\runner.exe
+            rem if %errorlevel% neq 0 exit /b %errorlevel%
+            %SCRATCH%\runner %*
+            if %errorlevel% neq 0 exit /b %errorlevel%
             """#
           ] : [
             "-eo", "pipefail", "-c",
