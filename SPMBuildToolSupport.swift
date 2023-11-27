@@ -281,7 +281,7 @@ private extension SPMBuildCommand.Executable {
   func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
     case .file(let p):
-      return .init(executable: p.repaired, argumentPrefix: [], additionalSources: [p.url])
+      return .init(executable: p.repaired, argumentPrefix: [], additionalSources: [])
 
     case .targetInThisPackage(let targetName):
       if !osIsWindows {
