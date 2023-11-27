@@ -257,8 +257,8 @@ extension SPMBuildToolPlugin {
     -> [PackagePlugin.Command]
   {
 
-    return try await buildCommands(context: context, target: target).map {
-      try $0.spmCommand(in: context)
+    return try await buildCommands(context: context, target: target).flatMap {
+      try $0.spmCommands(in: context)
     }
 
   }
@@ -339,6 +339,15 @@ private extension SPMBuildCommand.Executable {
     case .command(let c):
       return try .init(
         executable: context.executable(invokedAs: c, searching: executableSearchPath))
+
+    case .swiftScript(let f):
+      fatalError()
+      /*
+      return try .init(
+        executable:
+          context.pluginWorkDirectory.repaired/UUID().uuidString/"runner.exe",
+          argumentPrefix: [], additionalSources: [])
+       */
     }
   }
 
@@ -348,7 +357,7 @@ fileprivate extension SPMBuildCommand {
 
   /// Returns a representation of `self` for the result of a `BuildToolPlugin.createBuildCommands`
   /// invocation with the given `context` parameter.
-  func spmCommand(in context: PackagePlugin.PluginContext) throws -> PackagePlugin.Command {
+  func spmCommands(in context: PackagePlugin.PluginContext) throws -> [PackagePlugin.Command] {
 
     switch self {
     case .buildCommand(
@@ -372,7 +381,7 @@ fileprivate extension SPMBuildCommand {
         .subpathsOfDirectory(atPath: pluginSourceDirectory.path)
         .map { pluginSourceDirectory.appendingPath($0) }
 
-      return .buildCommand(
+      return [.buildCommand(
         displayName: displayName,
         executable: i.executable,
         arguments: i.argumentPrefix + arguments,
@@ -380,7 +389,7 @@ fileprivate extension SPMBuildCommand {
         inputFiles: inputFiles.map(\.repaired)
           + (pluginSources + i.additionalSources).map(\.spmPath)
           + [ i.executable.repaired ],
-        outputFiles: outputFiles.map(\.repaired))
+        outputFiles: outputFiles.map(\.repaired))]
 
     case .prebuildCommand(
            displayName: let displayName,
@@ -391,12 +400,12 @@ fileprivate extension SPMBuildCommand {
 
       let i = try tool.spmInvocation(in: context)
 
-      return .prebuildCommand(
+      return [.prebuildCommand(
         displayName: displayName,
         executable: i.executable,
         arguments: i.argumentPrefix + arguments,
         environment: environment,
-        outputFilesDirectory: outputFilesDirectory.repaired)
+        outputFilesDirectory: outputFilesDirectory.repaired)]
     }
   }
 
@@ -418,6 +427,8 @@ public enum SPMBuildCommand {
     /// an executable found in the environment's executable search path, given the name you'd use to
     /// invoke it in a shell (e.g. "find").
     case command(String)
+
+    case swiftScript(PackagePlugin.Path)
 
   }
 
