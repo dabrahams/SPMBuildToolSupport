@@ -363,7 +363,7 @@ private extension SPMBuildCommand.Executable {
             SCRATCH="$1"
             SCRIPT="$2"
             shift 2
-            mkdir -p "$SCRATCH"
+            mkdir -p "$SCRATCH"/module-cache
             swiftc -module-cache-path "$SCRATCH"/module-cache "$SCRIPT" -o "$SCRATCH"/runner
             "$SCRATCH"/runner "$@"
             """,
