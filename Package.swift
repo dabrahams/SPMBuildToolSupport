@@ -13,9 +13,9 @@ let onWindows = false
 
 let package = Package(
   name: "SPMBuildToolSupport",
-  products: [
-    .executable(name: "GenerateResource", targets: ["GenerateResource"])
-  ],
+  products: onWindows
+    ? [ .executable(name: "GenerateResource", targets: ["GenerateResource"]) ]
+    : [],
 
   targets: [
     // ----------------- Demonstrates a plugin running an executable target --------------
