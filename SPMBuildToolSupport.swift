@@ -24,6 +24,7 @@ private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
 /// On platforms where environment variable names are case-insensitive (Windows), the keys have all
 /// been normalized to upper case, so looking up a variable value from this dictionary by a name
 /// that isn't all-uppercase is a non-portable operation.
+// FIXME: use a second map from upcased keys to acutal keys.
 private let environmentVariables = osIsWindows ?
   Dictionary(
     uniqueKeysWithValues: ProcessInfo.processInfo.environment.lazy.map {
@@ -59,7 +60,7 @@ public extension Path {
 
 extension PackagePlugin.PluginContext {
 
-  func makeScratchDirectory() -> URL {
+  func makeScratchDirectory() throws -> URL {
     for _ in 0..<10 {
       do {
         let d = pluginWorkDirectory.url/UUID().uuidString
@@ -68,8 +69,7 @@ extension PackagePlugin.PluginContext {
       }
       catch {}
     }
-
-    fatalError("Could not create a temporary directory after 10 tries.")
+    throw Failure(description: "couldn't create scratch directory after 10 tries.")
   }
 
   /// Returns the binary executable file that would be invoked as `command` from the command line if
@@ -98,7 +98,7 @@ extension PackagePlugin.PluginContext {
 
     // Use an empty working directory to shield Windows from finding it in the current directory,
     // should it happen to contain an appropriately-named executable.
-    let t = makeScratchDirectory()
+    let t = try makeScratchDirectory()
     defer { _ = try? fileManager.removeItem(at: t) } // ignore if we fail to remove it.
 
     let p = try Process.commandOutput(
@@ -409,12 +409,12 @@ fileprivate extension SPMBuildCommand {
       let pluginSourceDirectory = URL(fileURLWithPath: pluginSourceFile).deletingLastPathComponent()
 
       // We could filter out directories, but why bother?
-      let pluginSources = try fileManager
-        .subpathsOfDirectory(atPath: pluginSourceDirectory.platformString)
-        .map { pluginSourceDirectory.appendingPath($0) }
+      let pluginSources = (
+        (try? fileManager.subpathsOfDirectory(atPath: pluginSourceDirectory.platformString)) ?? []
+      ).map { pluginSourceDirectory.appendingPath($0) }
 
-      let executableSize = try FileManager
-        .default.attributesOfItem(atPath: i.executable.platformString)[FileAttributeKey.size] as! UInt64
+      let executableSize = try fileManager
+        .attributesOfItem(atPath: i.executable.platformString)[FileAttributeKey.size] as! UInt64
       let executableDependency = executableSize == 0 ? [] : [ i.executable.repaired ]
       return [
         .buildCommand(
@@ -424,8 +424,8 @@ fileprivate extension SPMBuildCommand {
         environment: environment,
         inputFiles: inputFiles.map(\.repaired)
           + (pluginSources + i.additionalSources).map(\.spmPath)
-      // Work around an SPM bug on Windows: the path to PWSH is some kind of zero-byte shortcut, and SPM
-      // complains that it doesn't exist if we try to depend on it.
+      // Work around an SPM bug on Windows: the path to PWSH is some kind of zero-byte shortcut, and
+      // SPM complains that it doesn't exist if we try to depend on it.
           + executableDependency,
         outputFiles: outputFiles.map(\.repaired))]
 
