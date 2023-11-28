@@ -61,7 +61,7 @@ This is just a partial list:
    to a `PackagePlugin.Path`.
    
 5. **On Windows**:
-   - In `Package.swift`, omit executable targets in your package from the list of your build tool's
+   - In `Package.swift`, [omit executable targets in your package](https://github.com/dabrahams/SPMBuildToolSupport/blob/main/Package.swift#L29) from the list of your build tool's
      dependencies.
    - To speed up builds when using `.targetInThisPackage(name:)` commands, set
      `SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD=1` in your environment, but always build the targets
