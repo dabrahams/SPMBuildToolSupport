@@ -89,6 +89,6 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           swift package clean
-          swift build -c ${{ matrix.configuration }} ${{ matrix.build-options }} --target GenerateResource
           $env:SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD=1
+          swift build -c ${{ matrix.configuration }} ${{ matrix.build-options }} --target GenerateResource
           swift test -c ${{ matrix.configuration }} ${{ matrix.build-options }}
