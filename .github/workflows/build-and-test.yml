@@ -49,6 +49,7 @@ jobs:
         include:
           # Default values to add
           - shell: 'bash -eo pipefail {0}'
+          - build-options: '--explicit-target-dependency-import-check=error'
 
           # Overrides for the defaults
           - shell: pwsh
@@ -81,5 +82,13 @@ jobs:
 
       - name: Build and Test (${{ matrix.configuration }})
         run: >
-          swift test -c ${{ matrix.configuration }}
+          swift test -c ${{ matrix.configuration }} ${{ matrix.build-options }}
           --explicit-target-dependency-import-check=error
+
+      - name: Test non-reentrant build (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          swift package clean
+          swift build -c ${{ matrix.configuration }} ${{ matrix.build-options }} --target GenerateResource
+          $env:SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD=1
+          swift test -c ${{ matrix.configuration }} ${{ matrix.build-options }}
