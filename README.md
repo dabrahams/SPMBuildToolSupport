@@ -1,5 +1,9 @@
 # SPMBuildToolSupport
-Provides (and demonstrates) workarounds for Swift Package Manager bugs and limitations.
+
+This code allows your build tool plugins to easily and portably run executable targets, executable
+files by their path, commands that can be invoked from a shell, or Swift script files.
+
+This package provides (and demonstrates) workarounds for Swift Package Manager bugs and limitations.
 
 ## What bugs and limitations?
 
@@ -38,7 +42,7 @@ This is just a partial list:
 
 2. Make your plugin inherit from `SPMBuildToolPlugin` and implement its `buildCommands` method
    (instead of inheriting from `BuildToolPlugin` and implementing `createBuildCommands`).  This
-   project contains several examples.  There are four kinds of executables that can run build
+   project contains [several examples](https://github.com/dabrahams/SPMBuildToolSupport/tree/main/Plugins).  There are four kinds of executables that can run build
    commands:
 
    - `.targetInThisPackage`: an executable target in the same package as the plugin.
