@@ -413,9 +413,12 @@ fileprivate extension SPMBuildCommand {
         (try? fileManager.subpathsOfDirectory(atPath: pluginSourceDirectory.platformString)) ?? []
       ).map { pluginSourceDirectory.appendingPath($0) }
 
-      let executableSize = try fileManager
-        .attributesOfItem(atPath: i.executable.platformString)[FileAttributeKey.size] as! UInt64
-      let executableDependency = executableSize == 0 ? [] : [ i.executable.repaired ]
+      // Work around an SPM bug on Windows: the path to PWSH is some kind of zero-byte shortcut, and
+      // SPM complains that it doesn't exist if we try to depend on it.
+      let executableDependency = try osIsWindows && fileManager.attributesOfItem(
+        atPath: i.executable.platformString)[FileAttributeKey.size] as! UInt64 == 0 ? []
+        : [ i.executable.repaired ]
+
       return [
         .buildCommand(
         displayName: displayName,
@@ -424,8 +427,6 @@ fileprivate extension SPMBuildCommand {
         environment: environment,
         inputFiles: inputFiles.map(\.repaired)
           + (pluginSources + i.additionalSources).map(\.spmPath)
-      // Work around an SPM bug on Windows: the path to PWSH is some kind of zero-byte shortcut, and
-      // SPM complains that it doesn't exist if we try to depend on it.
           + executableDependency,
         outputFiles: outputFiles.map(\.repaired))]
 
