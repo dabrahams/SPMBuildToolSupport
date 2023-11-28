@@ -8,6 +8,12 @@ let osIsWindows = true
 let osIsWindows = false
 #endif
 
+#if os(macOS)
+let osIsMacOS = true
+#else
+let osIsMacOS = false
+#endif
+
 let fileManager = FileManager.default
 
 /// The separator between elements of the executable search path.
@@ -357,6 +363,8 @@ private extension SPMBuildCommand.Executable {
         .removingLastComponent().removingLastComponent()/"bin"/"bash.exe"
         : context.executable(invokedAs: "bash", searching: executableSearchPath)
 
+      let swiftc = osIsMacOS ? "xcrun swiftc" : "swiftc"
+
       return .init(
         executable: bash,
         argumentPrefix: [
@@ -366,7 +374,7 @@ private extension SPMBuildCommand.Executable {
             SCRIPT="$2"
             shift 2
             mkdir -p "$SCRATCH"/module-cache
-            swiftc -module-cache-path "$SCRATCH"/module-cache "$SCRIPT" -o "$SCRATCH"/runner
+            \(swiftc) -module-cache-path "$SCRATCH"/module-cache "$SCRIPT" -o "$SCRATCH"/runner
             "$SCRATCH"/runner "$@"
             """,
           "ignored", // $0
