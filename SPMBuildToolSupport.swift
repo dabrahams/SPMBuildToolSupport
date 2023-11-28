@@ -8,6 +8,8 @@ let osIsWindows = true
 let osIsWindows = false
 #endif
 
+let fileManager = FileManager.default
+
 /// The separator between elements of the executable search path.
 private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
 
@@ -55,7 +57,7 @@ extension PackagePlugin.PluginContext {
     for _ in 0..<10 {
       do {
         let d = pluginWorkDirectory.url/UUID().uuidString
-        try FileManager().createDirectory(at: d, withIntermediateDirectories: false)
+        try fileManager.createDirectory(at: d, withIntermediateDirectories: false)
         return d
       }
       catch {}
@@ -75,7 +77,7 @@ extension PackagePlugin.PluginContext {
   ) throws -> PackagePlugin.Path {
     if !osIsWindows {
       if let r = searchPath.lazy.map({ $0/(command) })
-           .first(where: { FileManager().isExecutableFile(atPath: $0.path) }).map(\.spmPath)
+           .first(where: { fileManager.isExecutableFile(atPath: $0.path) }).map(\.spmPath)
       {
         return r
       }
@@ -91,7 +93,7 @@ extension PackagePlugin.PluginContext {
     // Use an empty working directory to shield Windows from finding it in the current directory,
     // should it happen to contain an appropriately-named executable.
     let t = makeScratchDirectory()
-    defer { _ = try? FileManager().removeItem(at: t) } // ignore if we fail to remove it.
+    defer { _ = try? fileManager.removeItem(at: t) } // ignore if we fail to remove it.
 
     let p = try Process.commandOutput(
             whereCommand, arguments: [command],
@@ -399,7 +401,7 @@ fileprivate extension SPMBuildCommand {
       let pluginSourceDirectory = URL(fileURLWithPath: pluginSourceFile).deletingLastPathComponent()
 
       // We could filter out directories, but why bother?
-      let pluginSources = try FileManager.default
+      let pluginSources = try fileManager
         .subpathsOfDirectory(atPath: pluginSourceDirectory.platformString)
         .map { pluginSourceDirectory.appendingPath($0) }
 
