@@ -3,6 +3,8 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
 
 ## What bugs and limitations?
 
+This is just a partial list:
+
 - Bugs:
   - Plugin outputs are not automatically rebuilt when a plugin's source changes
     (https://github.com/apple/swift-package-manager/issues/6936)
@@ -13,7 +15,8 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
   - If you use a plugin to generate tests or source for an executable, on Windows, SPM will try to
     link the plugin itself into the executable, resulting in “duplicate main” link errors
     (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716).
-
+  - `swift SomeFile.swift` doesn't work on Windows.
+  
 - Limitations:
 
   - No easy way to reentrantly invoke SPM from within a build tool plugin, a key to working around
@@ -25,7 +28,7 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
 
 ## How do I use this package?
 
-1. Because your SPM build tool plugins [cannot have any dependencies on
+1. SPM build tool plugins [cannot have any dependencies on
    libraries](https://forums.swift.org/t/difficulty-sharing-code-between-swift-package-manager-plugins/61690/10),
    so you must arrange for your plugin's source to include
    [`SPMBuildToolSupport.swift`](SPMBuildToolSupport.swift).  One way to do that if you want to stay
@@ -35,13 +38,15 @@ Provides (and demonstrates) workarounds for Swift Package Manager bugs and limit
 
 2. Make your plugin inherit from `SPMBuildToolPlugin` and implement its `buildCommands` method
    (instead of inheriting from `BuildToolPlugin` and implementing `createBuildCommands`).  This
-   project contains several examples.  There are three kinds of executables that can run build
+   project contains several examples.  There are four kinds of executables that can run build
    commands:
 
    - `.targetInThisPackage`: an executable target in the same package as the plugin.
    - `.file`: a specific executable file.
    - `.command`: an executable found in the environment's executable search path,
      given the name you'd use to invoke it in a shell (e.g. "find").
+   - `.swiftScript`: the executable produced by building a single specific `.swift` file, almost as
+     though the file was passed as a parameter to the `swift` command.
 
 3. To turn a `PackagePlugin.Path` or a `Foundation.URL` into a string that will be recognized by the
    host OS (say, to pass on a command line), use its `.platformString` property.  **Do not use
