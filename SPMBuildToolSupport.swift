@@ -110,13 +110,48 @@ extension PackagePlugin.PluginContext {
 
   /// Returns the executable from the current Swift toolchain that could be invoked as `commandName`
   /// from a shell.
+  ///
+  /// - Warning: only works on Windows, throwing unconditionally on other platforms.
   func swiftToolchainExecutable(invokedAs commandName: String) throws -> PackagePlugin.Path {
-    return try tool(named: commandName).path
+    return try executable(invokedAs: commandName, searching: [ toolchainBinDirectory() ])
+  }
+
+  /// Returns the current Swift `Toolchain/bin` directory.
+  ///
+  /// - Warning: only works on Windows, throwing unconditionally on other platforms.
+  private func toolchainBinDirectory() throws -> URL {
+    // SwiftPM seems to put a descendant of the toolchain directory, with the following suffix, into
+    // the executable search path when plugins are run on Windows
+    let pluginAPISuffix = ["lib", "swift", "pm", "PluginAPI"]
+
+    // The toolchain directory should have a bin/ directory containing a "swift" executable.
+    guard let toolchain = executableSearchPath.lazy
+            .compactMap({ $0.sansPathComponentSuffix(pluginAPISuffix) })
+            .first(where: { (try? executable(invokedAs: "swift", searching: [$0/"bin"])) != nil })
+    else {
+      throw Failure(description: "Could not locate Swift toolchain bin directory in path.")
+    }
+
+    return toolchain/"bin"
   }
 
 }
 
 extension URL {
+
+  /// Returns a copy of self after removing `possibleSuffix` from the tail of its `pathComponents`,
+  /// or returns `nil` if `possibleSuffix` is not a suffix of `pathComponents`.
+  fileprivate func sansPathComponentSuffix<
+    PossibleSuffix: BidirectionalCollection<String> >(_ possibleSuffix: PossibleSuffix) -> URL?
+  {
+    var r = self
+    var remainingSuffix = possibleSuffix[...]
+    while let x = remainingSuffix.popLast() {
+      if r.lastPathComponent != x { return nil }
+      r.deleteLastPathComponent()
+    }
+    return r
+  }
 
   /// The representation used by the native filesystem.
   public var platformString: String {
@@ -314,7 +349,8 @@ private extension SPMBuildCommand.Executable {
           context.package.sourceDependencies(ofTargetNamed: targetName))
 
     case .command(let c):
-      return try .init(executable: context.executable(invokedAs: c, searching: executableSearchPath))
+      return try .init(
+        executable: context.executable(invokedAs: c, searching: executableSearchPath))
 
     case .swiftScript(let s):
       let work = context.pluginWorkDirectory.repaired
