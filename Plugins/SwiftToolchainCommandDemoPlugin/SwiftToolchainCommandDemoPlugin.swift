@@ -8,16 +8,16 @@ struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target
   ) throws -> [SPMBuildCommand] {
 
-    let swiftToDump = context.package.directory/"DemoScripts"/"Echo1Into2.swift"
-    let astFile = context.pluginWorkDirectory/"AST.txt"
+    let rawCCode = context.package.directory/"DemoScripts"/"Dummy.c"
+    let preprocessedOutput = context.pluginWorkDirectory/"Dummy.pp"
 
     return [
       .buildCommand(
-        displayName: "Generating AST dump as resource",
-        executable: .swiftToolchainCommand("swiftc"),
-        arguments: ["-dump-ast", swiftToDump.platformString, "-o",  astFile.platformString],
-        inputFiles: [swiftToDump],
-        outputFiles: [astFile])
+        displayName: "Generating preprocessed C as resource",
+        executable: .swiftToolchainCommand("clang"),
+        arguments: ["-E", rawCCode.platformString, "-o",  preprocessedOutput.platformString],
+        inputFiles: [rawCCode],
+        outputFiles: [preprocessedOutput])
     ]
   }
 

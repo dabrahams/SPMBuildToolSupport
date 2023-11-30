@@ -1,0 +1,1 @@
+This file will unfortunately be copied into the resource fork.  We need something here to make the bundler happy.
