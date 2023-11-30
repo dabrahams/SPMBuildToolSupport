@@ -42,8 +42,8 @@ This is just a partial list:
 
 2. Make your plugin inherit from `SPMBuildToolPlugin` and implement its `buildCommands` method
    (instead of inheriting from `BuildToolPlugin` and implementing `createBuildCommands`).  This
-   project contains [several examples](https://github.com/dabrahams/SPMBuildToolSupport/tree/main/Plugins).  There are four kinds of executables that can run build
-   commands:
+   project contains [several examples](https://github.com/dabrahams/SPMBuildToolSupport/tree/main/Plugins).
+   There are several kinds of executables that can run build commands:
 
    - `.targetInThisPackage`: an executable target in the same package as the plugin.
    - `.file`: a specific executable file.
@@ -55,15 +55,15 @@ This is just a partial list:
      name you'd use to invoke it in a shell (e.g. "swift", "swiftc", "clang").
 
 
-3. To turn a `PackagePlugin.Path` or a `Foundation.URL` into a string that will be recognized by the
+4. To turn a `PackagePlugin.Path` or a `Foundation.URL` into a string that will be recognized by the
    host OS (say, to pass on a command line), use its `.platformString` property.  **Do not use
    `URL`'s other properties (e.g. `.path`) for this purpose, as tempting as it may be**.
 
-4. Avoid naïve path manipulations on a `PackagePlugin.Path` directly, which is buggy on some
+5. Avoid naïve path manipulations on a `PackagePlugin.Path` directly, which is buggy on some
    platforms.  Consider using its `url` property and then, if necessary, converting the result back
    to a `PackagePlugin.Path`.
    
-5. **On Windows**:
+6. **On Windows**:
    - In `Package.swift`, [omit executable targets in your package](https://github.com/dabrahams/SPMBuildToolSupport/blob/150f67fc2c08d1f13c143c9e2c31e4c9070b09a6/Package.swift#L31) from the list of your build tool's
      dependencies.
    - To speed up builds when using `.targetInThisPackage(name:)`:
