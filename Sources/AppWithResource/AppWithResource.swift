@@ -1,11 +1,11 @@
 import Foundation
-import LibWithResource
+import LibWithResourceGeneratedByLocalTarget
 
 @main
 struct AppWithResource {
 
   static func main() throws {
-    print(resourceBundle.path(forResource: "Test1.out", ofType: nil) ?? "** Not Found **")
+    print(resourcesGeneratedByLocalTarget.path(forResource: "Test1.out", ofType: nil) ?? "** Not Found **")
   }
 
 }

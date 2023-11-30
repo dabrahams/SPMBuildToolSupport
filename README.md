@@ -51,6 +51,9 @@ This is just a partial list:
      given the name you'd use to invoke it in a shell (e.g. "find").
    - `.swiftScript`: the executable produced by building a single specific `.swift` file, almost as
      though the file was passed as a parameter to the `swift` command.
+   - `.swiftToolchainCommand`: an executable from the currently-running Swift toolchain, given the
+     name you'd use to invoke it in a shell (e.g. "swift", "swiftc", "clang").
+
 
 3. To turn a `PackagePlugin.Path` or a `Foundation.URL` into a string that will be recognized by the
    host OS (say, to pass on a command line), use its `.platformString` property.  **Do not use

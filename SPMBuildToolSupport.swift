@@ -110,10 +110,12 @@ extension PackagePlugin.PluginContext {
 
   /// Returns the executable from the current Swift toolchain that could be invoked as `commandName`
   /// from a shell.
-  ///
-  /// - Warning: only works on Windows, throwing unconditionally on other platforms.
   func swiftToolchainExecutable(invokedAs commandName: String) throws -> PackagePlugin.Path {
-    return try executable(invokedAs: commandName, searching: [ toolchainBinDirectory() ])
+    // Workaround https://github.com/apple/swift-package-manager/issues/7134#issuecomment-1832870988
+    // on Windows.
+    return try osIsWindows
+      ? executable(invokedAs: commandName, searching: [ toolchainBinDirectory() ])
+      : tool(named: commandName).path
   }
 
   /// Returns the current Swift `Toolchain/bin` directory.
@@ -380,7 +382,11 @@ private extension SPMBuildCommand.Executable {
           "ignored", // $0
           scratch.platformString,
           s.platformString,
-        ])
+        ],
+        additionalSources: [s.url])
+
+    case .swiftToolchainCommand(let c):
+      return try .init(executable: context.swiftToolchainExecutable(invokedAs: c))
     }
   }
 }
@@ -462,12 +468,20 @@ public enum SPMBuildCommand {
     /// An executable file not that exists before the build starts.
     case file(PackagePlugin.Path)
 
-    /// an executable found in the environment's executable search path, given the name you'd use to
+    /// An executable found in the environment's executable search path, given the name you'd use to
     /// invoke it in a shell (e.g. "find").
     case command(String)
 
+    /// The executable produced by building the given `.swift` file, almost as though the file was
+    /// passed as a parameter to the `swift` command.
     case swiftScript(PackagePlugin.Path)
 
+    /// An executable from the currently-running Swift toolchain, given the name you'd use to
+    /// invoke it in a shell (e.g. "swift", "swiftc", "clang").
+    ///
+    /// Works portably as long as you haven't made your plugin depend on a target with the same name
+    /// as the command.
+    case swiftToolchainCommand(String)
   }
 
   /// A command that runs when any of its output files are needed by

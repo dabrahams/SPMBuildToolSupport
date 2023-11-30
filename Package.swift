@@ -37,13 +37,13 @@ let package = Package(
 
     // The target into whose resource bundle which the result is copied
     .target(
-      name: "LibWithResource",
+      name: "LibWithResourceGeneratedByLocalTarget",
       plugins: ["LocalTargetCommandDemoPlugin"]
     ),
 
     // An app that uses the resources in the above library
     .executableTarget(
-      name: "AppWithResource", dependencies: ["LibWithResource"],
+      name: "AppWithResource", dependencies: ["LibWithResourceGeneratedByLocalTarget"],
       // -parse-as-library is needed to make the @main directive work.
       swiftSettings: [ .unsafeFlags(["-parse-as-library"]) ]),
 
@@ -85,11 +85,24 @@ let package = Package(
       plugins: ["SwiftScriptDemoPlugin"]
     ),
 
+    // ----------------- Demonstrates a plugin running a tool from the Swift toolchain --------------
+
+    // This plugin causes an invocation of the `swiftc` tool
+    .plugin(
+      name: "SwiftToolchainCommandDemoPlugin", capability: .buildTool()
+    ),
+
+    // The target into whose resource bundle which the result is copied
+    .target(
+      name: "LibWithResourceGeneratedBySwiftToolchainCommand",
+      plugins: ["SwiftToolchainCommandDemoPlugin"]
+    ),
+
     // ----------------- Tests that prove this all works. --------------
 
     .testTarget(
       name: "SPMBuildToolSupportTests",
-      dependencies: ["LibWithResource"]
+      dependencies: ["LibWithResourceGeneratedByLocalTarget", "LibWithResourceGeneratedBySwiftToolchainCommand"]
     ),
 
   ]
