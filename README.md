@@ -10,15 +10,13 @@ This package provides (and demonstrates) workarounds for Swift Package Manager b
 This is just a partial list:
 
 - Bugs:
-  - Plugin outputs are not automatically rebuilt when a plugin's source changes
-    (https://github.com/apple/swift-package-manager/issues/6936)
-  - Plugin outputs are not automatically rebuilt when a plugin's executable changes
-    (https://github.com/apple/swift-package-manager/issues/6936)
-  - Broken file system path handling on Windows
-    (https://github.com/apple/swift-package-manager/issues/6994)
+  - Plugin outputs are not automatically rebuilt when a plugin's executable changes ([SPM issue
+    #6936](https://github.com/apple/swift-package-manager/issues/6936))
+  - Broken file system path handling on Windows ([SPM issue
+    #6994](https://github.com/apple/swift-package-manager/issues/6994))
   - If you use a plugin to generate tests or source for an executable, on Windows, SPM will try to
-    link the plugin itself into the executable, resulting in “duplicate main” link errors
-    (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716).
+    link the plugin itself into the executable, resulting in “duplicate main” link errors ([SPM issue
+    #6859](https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716)).
   - `swift SomeFile.swift` doesn't work on Windows.
   
 - Limitations:
@@ -29,6 +27,10 @@ This is just a partial list:
   - SPM's `Path` type doesn't interoperate well with Foundation's `URL`.
   - The released version of the API docs for build tool plugins is inaccurate and confusing (fixes
     [here](https://github.com/apple/swift-package-manager/pull/6941/files)).
+
+**Note:** Plugin outputs are not automatically rebuilt when a plugin's source changes ([SPM issue
+    #6936](https://github.com/apple/swift-package-manager/issues/6936)).  We don't have a workaround
+    for this problem.
 
 ## How do I use this package?
 

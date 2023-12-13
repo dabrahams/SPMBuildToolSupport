@@ -404,20 +404,9 @@ fileprivate extension SPMBuildCommand {
            arguments: let arguments,
            environment: let environment,
            inputFiles: let inputFiles,
-           outputFiles: let outputFiles,
-           pluginSourceFile: let pluginSourceFile):
+           outputFiles: let outputFiles):
 
       let i = try executable.spmInvocation(in: context)
-
-      /// Guess at files that constitute this plugin, the changing of which should cause outputs to
-      /// be regenerated (workaround for
-      /// https://github.com/apple/swift-package-manager/issues/6936).
-      let pluginSourceDirectory = URL(fileURLWithPath: pluginSourceFile).deletingLastPathComponent()
-
-      // We could filter out directories, but why bother?
-      let pluginSources = (
-        (try? fileManager.subpathsOfDirectory(atPath: pluginSourceDirectory.platformString)) ?? []
-      ).map { pluginSourceDirectory.appendingPath($0) }
 
       // Work around an SPM bug on Windows: the path to PWSH is some kind of zero-byte shortcut, and
       // SPM complains that it doesn't exist if we try to depend on it.
@@ -431,7 +420,7 @@ fileprivate extension SPMBuildCommand {
         arguments: i.argumentPrefix + arguments,
         environment: environment,
         inputFiles: inputFiles.map(\.repaired)
-          + (pluginSources + i.additionalSources).map(\.spmPath)
+          + i.additionalSources.map(\.spmPath)
           + executableDependency,
         outputFiles: outputFiles.map(\.repaired))
 
@@ -510,17 +499,13 @@ public enum SPMBuildCommand {
   ///     was generated as if in its source directory; other files are treated
   ///     as resources as if explicitly listed in `Package.swift` using
   ///     `.process(...)`.
-  ///   - pluginSourceFile: the path to a source file of the SPMBuildToolPlugin; allow the
-  ///     default to take effect.
   case buildCommand(
         displayName: String?,
         executable: Executable,
         arguments: [String],
         environment: [String: String] = [:],
         inputFiles: [Path] = [],
-        outputFiles: [Path] = [],
-        pluginSourceFile: String = #filePath
-       )
+        outputFiles: [Path] = [])
 
   /// A command that runs unconditionally before every build.
   ///
