@@ -43,7 +43,7 @@ This is just a partial list:
 2. Make your plugin inherit from `SPMBuildToolPlugin` and implement its `buildCommands` method
    (instead of inheriting from `BuildToolPlugin` and implementing `createBuildCommands`).  This
    project contains [several examples](https://github.com/dabrahams/SPMBuildToolSupport/tree/main/Plugins).
-   There are several kinds of executables that can run build commands:
+   Executables that can run build commands are divided into the following cases:
 
    - `.targetInThisPackage`: an executable target in the same package as the plugin.
    - `.file`: a specific executable file.
@@ -62,8 +62,16 @@ This is just a partial list:
 5. Avoid naïve path manipulations on a `PackagePlugin.Path` directly, which is buggy on some
    platforms.  Consider using its `url` property and then, if necessary, converting the result back
    to a `PackagePlugin.Path`.
-   
-6. **On Windows**:
+
+6. To avoid spurious warnings from SPM about unhandled sources, do not use SPM's
+   `.sourceFiles(withSuffix: ".in")` to find the input files to your build plugin.  Instead,
+   [exclude them from the
+   target](https://github.com/dabrahams/SPMBuildToolSupport/blob/50d6f1d/Package.swift#L45) in
+   `Package.swift` and in your plugin, locate them relative to other directories in your
+   project. [`LocalTargetCommandDemoPlugin.swift`](https://github.com/dabrahams/SPMBuildToolSupport/blob/50d6f1d/Plugins/LocalTargetCommandDemoPlugin/LocalTargetCommandDemoPlugin.swift#L11-L14)
+   shows an example.
+
+7. **On Windows**:
    - In `Package.swift`, [omit executable targets in your package](https://github.com/dabrahams/SPMBuildToolSupport/blob/150f67fc2c08d1f13c143c9e2c31e4c9070b09a6/Package.swift#L31) from the list of your build tool's
      dependencies.
    - To speed up builds when using `.targetInThisPackage(name:)`:
