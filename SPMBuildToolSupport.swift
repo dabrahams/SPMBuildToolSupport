@@ -408,11 +408,20 @@ fileprivate extension SPMBuildCommand {
 
       let i = try executable.spmInvocation(in: context)
 
+      let workDirectory = context.pluginWorkDirectory.url
+      let pluginName = workDirectory.lastPathComponent
+      let cache = workDirectory.deletingLastPathComponent().deletingLastPathComponent()
+        .deletingLastPathComponent().deletingLastPathComponent() / "cache"
+      let pluginExecutable = cache / (pluginName + (osIsWindows ? ".exe" : ""))
+
       // Work around an SPM bug on Windows: the path to PWSH is some kind of zero-byte shortcut, and
       // SPM complains that it doesn't exist if we try to depend on it.
       let executableDependency = try osIsWindows && fileManager.attributesOfItem(
         atPath: i.executable.platformString)[FileAttributeKey.size] as! UInt64 == 0 ? []
         : [ i.executable.repaired ]
+
+      Diagnostics.warning("\(pluginName) pluginExecutable: \(pluginExecutable)")
+      Diagnostics.warning("\(pluginName) outputFiles: \(outputFiles)")
 
       return .buildCommand(
         displayName: displayName,
@@ -421,7 +430,8 @@ fileprivate extension SPMBuildCommand {
         environment: environment,
         inputFiles: inputFiles.map(\.repaired)
           + i.additionalSources.map(\.spmPath)
-          + executableDependency,
+          + executableDependency
+          + [ pluginExecutable.spmPath ],
         outputFiles: outputFiles.map(\.repaired))
 
     case .prebuildCommand(
