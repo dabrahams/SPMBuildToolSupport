@@ -38,6 +38,11 @@ let package = Package(
     // The target into whose resource bundle which the result is copied
     .target(
       name: "LibWithResourceGeneratedByLocalTarget",
+      // If we don't exclude these, we can use
+      //   (target as! SourceModuleTarget).sourceFiles(withSuffix: ".in")
+      // to find them, but we will get (incorrect) warnings from SPM about unhandled sources.
+      // See LocalTargetCommandDemoPlugin.swift for how to deal with them instead.
+      exclude: ["SourceGenerationInputs"],
       plugins: ["LocalTargetCommandDemoPlugin"]
     ),
 

@@ -8,10 +8,14 @@ struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target
   ) throws -> [SPMBuildCommand] {
 
-    let inputs = (target as! SourceModuleTarget)
-      .sourceFiles(withSuffix: ".in").map(\.path)
+    // Treating the inputs as sources causes SPM to (incorrectly) warn that they are unhandled.
+    // let inputs = (target as! SourceModuleTarget)
+    //   .sourceFiles(withSuffix: ".in").map(\.path)
+    let inputDirectory = target.directory.url / "SourceGenerationInputs"
 
-    if inputs.isEmpty { return [] }
+    let inputs = try FileManager.default
+      .subpathsOfDirectory(atPath: inputDirectory.platformString)
+      .map { (inputDirectory/$0).spmPath }
 
     let workDirectory = context.pluginWorkDirectory
     let outputDirectory = workDirectory.appending(subpath: "GeneratedResources")
