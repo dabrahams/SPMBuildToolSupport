@@ -66,9 +66,9 @@ This is just a partial list:
 6. To avoid spurious warnings from SPM about unhandled sources, do not use SPM's
    `.sourceFiles(withSuffix: ".in")` to find the input files to your build plugin.  Instead,
    [exclude them from the
-   target](https://github.com/dabrahams/SPMBuildToolSupport/blob/50d6f1d/Package.swift#L45) in
+   target](https://github.com/dabrahams/SPMBuildToolSupport/blob/48d0253/Package.swift#L45) in
    `Package.swift` and in your plugin, locate them relative to other directories in your
-   project. [`LocalTargetCommandDemoPlugin.swift`](https://github.com/dabrahams/SPMBuildToolSupport/blob/50d6f1d/Plugins/LocalTargetCommandDemoPlugin/LocalTargetCommandDemoPlugin.swift#L11-L14)
+   project. [`LocalTargetCommandDemoPlugin.swift`](https://github.com/dabrahams/SPMBuildToolSupport/blob/48d0253/Plugins/LocalTargetCommandDemoPlugin/LocalTargetCommandDemoPlugin.swift#L11-L14)
    shows an example.
 
 7. **On Windows**:
