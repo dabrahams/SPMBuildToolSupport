@@ -11,7 +11,7 @@ struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
     // Treating the inputs as sources causes SPM to (incorrectly) warn that they are unhandled.
     // let inputs = (target as! SourceModuleTarget)
     //   .sourceFiles(withSuffix: ".in").map(\.path)
-    let inputDirectory = target.directory.url / "SourceGenerationInputs"
+    let inputDirectory = target.directory.url / "BuildToolPluginInputs"
 
     let inputs = try FileManager.default
       .subpathsOfDirectory(atPath: inputDirectory.platformString)

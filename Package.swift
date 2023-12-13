@@ -42,7 +42,7 @@ let package = Package(
       //   (target as! SourceModuleTarget).sourceFiles(withSuffix: ".in")
       // to find them, but we will get (incorrect) warnings from SPM about unhandled sources.
       // See LocalTargetCommandDemoPlugin.swift for how to deal with them instead.
-      exclude: ["SourceGenerationInputs"],
+      exclude: ["BuildToolPluginInputs"],
       plugins: ["LocalTargetCommandDemoPlugin"]
     ),
 
