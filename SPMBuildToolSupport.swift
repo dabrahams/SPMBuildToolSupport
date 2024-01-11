@@ -174,21 +174,28 @@ public extension PackagePlugin.Target {
 
 public extension PackagePlugin.Package {
 
-  /// The source files in this package on which the given executable depends.
-  func sourceDependencies(ofTargetNamed targetName: String) throws -> [URL] {
+  /// Returns all the source files on which any executable target named `targetName` depends.
+  // This is a very conservative check because we have no way of knowing which package the plugin
+  // itself was defined in!
+  func sourceDependencies(ofTargetsNamed targetName: String) -> Set<URL> {
     var result: Set<URL> = []
-    let t0 = targets.first { $0.name == targetName }!
-    var visitedTargets: Set = [t0.id]
+    if let t0 = targets.first(where: { $0.name == targetName }) {
+      var visitedTargets: Set = [t0.id]
 
-    result.formUnion(t0.allSourceFiles)
+      result.formUnion(t0.allSourceFiles)
 
 
-    for t1 in t0.recursiveTargetDependencies {
-      if visitedTargets.insert(t1.id).inserted {
-        result.formUnion(t1.allSourceFiles)
+      for t1 in t0.recursiveTargetDependencies {
+        if visitedTargets.insert(t1.id).inserted {
+          result.formUnion(t1.allSourceFiles)
+        }
       }
     }
-    return Array(result)
+
+    for d in dependencies {
+      result.formUnion(d.package.sourceDependencies(ofTargetsNamed: targetName))
+    }
+    return result
   }
 
 }
@@ -331,7 +338,7 @@ private extension SPMBuildCommand.Executable {
           (packageDirectory / ".build" / UUID().uuidString).platformString
         ]
 
-      return try .init(
+      return .init(
         executable: try context.swiftToolchainExecutable(invokedAs: "swift"),
         argumentPrefix: [
           "run",
@@ -348,7 +355,7 @@ private extension SPMBuildCommand.Executable {
           + conditionalOptions
           + [ targetName ],
         additionalSources:
-          context.package.sourceDependencies(ofTargetNamed: targetName))
+          Array(context.package.sourceDependencies(ofTargetsNamed: targetName)))
 
     case .command(let c):
       return try .init(
