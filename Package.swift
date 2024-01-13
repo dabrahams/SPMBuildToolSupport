@@ -32,8 +32,7 @@ let package = Package(
     ),
 
     // The executable target run by the above plugin
-    .executableTarget(
-      name: "GenerateResource", swiftSettings: [ .unsafeFlags(["-parse-as-library"]) ]),
+    .executableTarget(name: "GenerateResource"),
 
     // The target into whose resource bundle which the result is copied
     .target(
@@ -43,9 +42,7 @@ let package = Package(
 
     // An app that uses the resources in the above library
     .executableTarget(
-      name: "AppWithResource", dependencies: ["LibWithResourceGeneratedByLocalTarget"],
-      // -parse-as-library is needed to make the @main directive work.
-      swiftSettings: [ .unsafeFlags(["-parse-as-library"]) ]),
+      name: "AppWithResource", dependencies: ["LibWithResourceGeneratedByLocalTarget"]),
 
     // ------ Demonstrates a plugin running an executable file with a known path ------
 
