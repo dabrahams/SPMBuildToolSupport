@@ -24,7 +24,7 @@ private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
 /// On platforms where environment variable names are case-insensitive (Windows), the keys have all
 /// been normalized to upper case, so looking up a variable value from this dictionary by a name
 /// that isn't all-uppercase is a non-portable operation.
-// FIXME: use a second map from upcased keys to acutal keys.
+// FIXME: use a second map from upcased keys to actual keys.
 private let environmentVariables = osIsWindows ?
   Dictionary(
     uniqueKeysWithValues: ProcessInfo.processInfo.environment.lazy.map {
