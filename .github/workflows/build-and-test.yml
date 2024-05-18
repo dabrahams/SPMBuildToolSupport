@@ -18,6 +18,8 @@ name: Build and test
       - "README.md"
       - "LICENSE"
       - ".gitignore"
+env:
+  swift-version: '5.10'
 
 jobs:
 
@@ -69,16 +71,18 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         uses: 'swift-actions/setup-swift@v1'
         with:
-          version: 5.9
+          version: ${{ env.swift-version }}
 
       - name: Setup Swift (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
-        uses: 'compnerd/gha-setup-swift@main'
+        uses: compnerd/gha-setup-swift@v0.2.1
         with:
-          github-repo: thebrowsercompany/swift-build
-          release-asset-name: installer-amd64.exe
-          release-tag-name: 20231010.3
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          branch: swift-${{ env.swift-version }}-release
+          tag: ${{ env.swift-version }}-RELEASE
+
+      - name: Verify swift version
+        run: swift --version && swift --version | grep -q ${{ env.swift-version }}
+        shell: bash
 
       - name: Build and Test (${{ matrix.configuration }})
         run: >
