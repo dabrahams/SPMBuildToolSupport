@@ -1,19 +1,6 @@
 import Foundation
 import PackagePlugin
 
-extension Path {
-
-  /// A representation of self suitable for use as the target of an output redirection in the
-  /// platform's shell.
-  var shellQuoted: String {
-    if osIsWindows { return "\"\(platformString)\"" }
-    let inner = repaired.platformString
-      .replacingOccurrences(of: #"\"#, with: #"\\"#)
-      .replacingOccurrences(of: "'", with: #"\'"#)
-    return "'\(inner)'"
-  }
-
-}
 /// A plugin that generates Swift source by running a command by name as if in a shell.
 @main
 struct CommandDemoPlugin: SPMBuildToolPlugin {
