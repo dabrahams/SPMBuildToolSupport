@@ -237,14 +237,6 @@ public extension Path {
   /// A `URL` referring to the same location.
   var url: URL { URL(fileURLWithPath: platformString) }
 
-  /// A representation of `Self` that works on all platforms.
-  var repaired: Self {
-    #if os(Windows)
-    Path(self.platformString)
-    #else
-    self
-    #endif
-  }
 }
 
 public extension URL {
