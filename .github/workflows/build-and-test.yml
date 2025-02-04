@@ -67,7 +67,7 @@ jobs:
 
       - name: Setup Swift (Unices)
         if: ${{ matrix.os != 'windows-latest' }}
-        uses: 'swift-actions/setup-swift@v1'
+        uses: 'swift-actions/setup-swift@v2'
         with:
           version: 5.9
 
