@@ -8,8 +8,8 @@ struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target
   ) throws -> [SPMBuildCommand] {
 
-    let rawCCode = context.package.directory/"DemoScripts"/"Dummy.c"
-    let preprocessedOutput = context.pluginWorkDirectory/"Dummy.pp"
+    let rawCCode = context.package.directoryURL/"DemoScripts"/"Dummy.c"
+    let preprocessedOutput = context.pluginWorkDirectoryURL/"Dummy.pp"
 
     return [
       .buildCommand(

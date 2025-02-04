@@ -15,13 +15,13 @@ struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
 
     let inputs = try FileManager.default
       .subpathsOfDirectory(atPath: inputDirectory.platformString)
-      .map { (inputDirectory/$0).spmPath }
+      .map { inputDirectory/$0 }
 
-    let workDirectory = context.pluginWorkDirectory
-    let outputDirectory = workDirectory.appending(subpath: "GeneratedResources")
+    let workDirectory = context.pluginWorkDirectoryURL
+    let outputDirectory = workDirectory / "GeneratedResources"
 
     let outputs = inputs.map {
-      outputDirectory.appending(subpath: $0.lastComponent.dropLast(2) + "out")
+      outputDirectory / ($0.lastPathComponent.dropLast(2) + "out")
     }
 
     return [
@@ -31,7 +31,7 @@ struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
         // Note the use of `.platformString` on these paths rather
         // than `.string`.  Your executable tool may have trouble
         // finding files and directories with `.string`.
-        arguments: (inputs + [ outputDirectory ]).map(\.platformString),
+        arguments: (inputs + [ outputDirectory ]).map(\URL.platformString),
         inputFiles: inputs,
         outputFiles: outputs)
     ]

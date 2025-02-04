@@ -14,10 +14,10 @@ let osIsMacOS = true
 let osIsMacOS = false
 #endif
 
-let fileManager = FileManager.default
+var fileManager: FileManager { FileManager.default }
 
 /// The separator between elements of the executable search path.
-private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
+private let pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
 
 /// The environment variables of the running process.
 ///
@@ -49,21 +49,12 @@ public extension URL {
 
 }
 
-public extension Path {
-
-  /// Returns `root` with the additional path component `x` appended.
-  static func / (_ root: Self, x: String) -> Self {
-    root.appending([x])
-  }
-
-}
-
 extension PackagePlugin.PluginContext {
 
   func makeScratchDirectory() throws -> URL {
     for _ in 0..<10 {
       do {
-        let d = pluginWorkDirectory.url/UUID().uuidString
+        let d = pluginWorkDirectoryURL/UUID().uuidString
         try fileManager.createDirectory(at: d, withIntermediateDirectories: false)
         return d
       }
@@ -80,10 +71,10 @@ extension PackagePlugin.PluginContext {
   ///   considered first as in Windows shells.
   func executable(
     invokedAs command: String, searching searchPath: [URL]
-  ) throws -> PackagePlugin.Path {
+  ) throws -> URL {
     if !osIsWindows {
       if let r = searchPath.lazy.map({ $0/(command) })
-           .first(where: { fileManager.isExecutableFile(atPath: $0.path) }).map(\.spmPath)
+           .first(where: { fileManager.isExecutableFile(atPath: $0.path) })
       {
         return r
       }
@@ -105,17 +96,17 @@ extension PackagePlugin.PluginContext {
             whereCommand, arguments: [command],
             environment: subshellEnvironment, workingDirectory: t)
 
-    return URL(fileURLWithPath: String(p.prefix { !$0.isNewline})).spmPath
+    return URL(fileURLWithPath: String(p.prefix { !$0.isNewline}))
   }
 
   /// Returns the executable from the current Swift toolchain that could be invoked as `commandName`
   /// from a shell.
-  func swiftToolchainExecutable(invokedAs commandName: String) throws -> PackagePlugin.Path {
+  func swiftToolchainExecutable(invokedAs commandName: String) throws -> URL {
     // Workaround https://github.com/apple/swift-package-manager/issues/7134#issuecomment-1832870988
     // on Windows.
     return try osIsWindows
       ? executable(invokedAs: commandName, searching: [ toolchainBinDirectory() ])
-      : tool(named: commandName).path
+      : tool(named: commandName).url
   }
 
   /// Returns the current Swift `Toolchain/bin` directory.
@@ -167,7 +158,7 @@ public extension PackagePlugin.Target {
   /// The source files.
   var allSourceFiles: [URL] {
     return (self as? PackagePlugin.SourceModuleTarget)?
-      .sourceFiles(withSuffix: "").map(\.path.url) ?? []
+      .sourceFiles(withSuffix: "").map(\.url) ?? []
   }
 
 }
@@ -235,11 +226,7 @@ public extension Path {
     #endif
   }
 }
-
 public extension URL {
-
-  /// A Swift Package Manager-compatible representation.
-  var spmPath: Path { Path(self.path) }
 
   /// Returns `self` with the relative file path `suffix` appended.
   ///
@@ -288,7 +275,7 @@ private extension SPMBuildCommand.Executable {
   struct SPMInvocation {
 
     /// The executable that will actually run.
-    let executable: PackagePlugin.Path
+    let executable: URL
     /// The command-line arguments that must precede the ones specified by the caller.
     let argumentPrefix: [String]
     /// The source files that must be added as build dependencies if we want the tool
@@ -297,7 +284,7 @@ private extension SPMBuildCommand.Executable {
 
     /// Creates an instance with the given properties.
     init(
-      executable: PackagePlugin.Path,
+      executable: URL,
       argumentPrefix: [String] = [],
       additionalSources: [URL] = [],
       additionalCommands: [SPMBuildCommand] = []
@@ -313,11 +300,11 @@ private extension SPMBuildCommand.Executable {
   func spmInvocation(in context: PackagePlugin.PluginContext) throws -> SPMInvocation {
     switch self {
     case .file(let p):
-      return .init(executable: p.repaired, argumentPrefix: [])
+      return .init(executable: p, argumentPrefix: [])
 
     case .targetInThisPackage(let targetName):
       if !osIsWindows {
-        return try .init(executable: context.tool(named: targetName).path.repaired)
+        return try .init(executable: context.tool(named: targetName).url)
       }
 
       // Instead of depending on context.tool(named:), which demands a declared dependency on the
@@ -327,7 +314,7 @@ private extension SPMBuildCommand.Executable {
 
       let noReentrantBuild
         = environmentVariables["SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD"] != nil
-      let packageDirectory = context.package.directory.url
+      let packageDirectory = context.package.directoryURL
 
       // Locate the scratch directory for reentrant builds inside the package directory to work
       // around SPM's broken Windows path handling
@@ -362,14 +349,14 @@ private extension SPMBuildCommand.Executable {
         executable: context.executable(invokedAs: c, searching: executableSearchPath))
 
     case .swiftScript(let s):
-      let work = context.pluginWorkDirectory.repaired
+      let work = context.pluginWorkDirectoryURL
       let scratch = work/UUID().uuidString
 
       // On Windows, SPM doesn't work unless git is in the Path, and we can find a working bash
       // relative to that as part of the git installation.
       let bash = try osIsWindows
         ? context.executable(invokedAs: "git", searching: executableSearchPath)
-        .removingLastComponent().removingLastComponent()/"bin"/"bash.exe"
+        .deletingLastPathComponent().deletingLastPathComponent()/"bin"/"bash.exe"
         : context.executable(invokedAs: "bash", searching: executableSearchPath)
 
       let swiftc = osIsMacOS ? "xcrun swiftc" : "swiftc"
@@ -390,7 +377,7 @@ private extension SPMBuildCommand.Executable {
           scratch.platformString,
           s.platformString,
         ],
-        additionalSources: [s.url])
+        additionalSources: [s])
 
     case .swiftToolchainCommand(let c):
       return try .init(executable: context.swiftToolchainExecutable(invokedAs: c))
@@ -419,17 +406,17 @@ fileprivate extension SPMBuildCommand {
       // SPM complains that it doesn't exist if we try to depend on it.
       let executableDependency = try osIsWindows && fileManager.attributesOfItem(
         atPath: i.executable.platformString)[FileAttributeKey.size] as! UInt64 == 0 ? []
-        : [ i.executable.repaired ]
+        : [ i.executable ]
 
       return .buildCommand(
         displayName: displayName,
         executable: i.executable,
         arguments: i.argumentPrefix + arguments,
         environment: environment,
-        inputFiles: inputFiles.map(\.repaired)
-          + i.additionalSources.map(\.spmPath)
+        inputFiles: inputFiles
+          + i.additionalSources
           + executableDependency,
-        outputFiles: outputFiles.map(\.repaired))
+        outputFiles: outputFiles)
 
     case .prebuildCommand(
            displayName: let displayName,
@@ -445,7 +432,7 @@ fileprivate extension SPMBuildCommand {
         executable: i.executable,
         arguments: i.argumentPrefix + arguments,
         environment: environment,
-        outputFilesDirectory: outputFilesDirectory.repaired)
+        outputFilesDirectory: outputFilesDirectory)
     }
   }
 
@@ -462,7 +449,7 @@ public enum SPMBuildCommand {
     case targetInThisPackage(String)
 
     /// An executable file not that exists before the build starts.
-    case file(PackagePlugin.Path)
+    case file(URL)
 
     /// An executable found in the environment's executable search path, given the name you'd use to
     /// invoke it in a shell (e.g. "find").
@@ -470,7 +457,7 @@ public enum SPMBuildCommand {
 
     /// The executable produced by building the given `.swift` file, almost as though the file was
     /// passed as a parameter to the `swift` command.
-    case swiftScript(PackagePlugin.Path)
+    case swiftScript(URL)
 
     /// An executable from the currently-running Swift toolchain, given the name you'd use to
     /// invoke it in a shell (e.g. "swift", "swiftc", "clang").
@@ -511,8 +498,8 @@ public enum SPMBuildCommand {
         executable: Executable,
         arguments: [String],
         environment: [String: String] = [:],
-        inputFiles: [Path] = [],
-        outputFiles: [Path] = [])
+        inputFiles: [URL] = [],
+        outputFiles: [URL] = [])
 
   /// A command that runs unconditionally before every build.
   ///
@@ -544,7 +531,7 @@ public enum SPMBuildCommand {
          executable: Executable,
          arguments: [String],
          environment: [String: String] = [:],
-         outputFilesDirectory: Path)
+         outputFilesDirectory: URL)
 
 }
 

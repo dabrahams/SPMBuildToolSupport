@@ -10,12 +10,12 @@ struct ExecutableFileDemoPlugin: SPMBuildToolPlugin {
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target
   ) throws -> [SPMBuildCommand] {
 
-    let outputFile = context.pluginWorkDirectory/"ExecutableOutput.swift"
+    let outputFile = context.pluginWorkDirectoryURL/"ExecutableOutput.swift"
 
     return [
       .buildCommand(
         displayName: "Running Echo1Into2",
-        executable: .file(context.package.directory/"DemoScripts"/(osIsWindows ? "Echo1Into2.cmd" : "Echo1Into2")),
+        executable: .file(context.package.directoryURL/"DemoScripts"/(osIsWindows ? "Echo1Into2.cmd" : "Echo1Into2")),
         // Note the use of `.platformString` on these paths rather
         // than `.string`.  Your executable tool may have trouble
         // finding files and directories with `.string`.
