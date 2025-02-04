@@ -14,10 +14,10 @@ let osIsMacOS = true
 let osIsMacOS = false
 #endif
 
-let fileManager = FileManager.default
+var fileManager: FileManager { FileManager.default }
 
 /// The separator between elements of the executable search path.
-private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
+private let pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
 
 /// The environment variables of the running process.
 ///
