@@ -19,8 +19,10 @@ name: Build and test
       - "LICENSE"
       - ".gitignore"
 
-jobs:
+env:
+  swift-version: '6.0.3'
 
+jobs:
   devcontainer:
     name: "Devcontainer: ${{ matrix.os }}/${{ matrix.configuration }}"
     strategy:
@@ -65,20 +67,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Swift (Unices)
-        if: ${{ matrix.os != 'windows-latest' }}
-        uses: 'swift-actions/setup-swift@v2'
+      - name: Set up swift
+        uses: SwiftyLab/setup-swift@latest
         with:
-          version: 5.9
-
-      - name: Setup Swift (Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
-        uses: 'compnerd/gha-setup-swift@main'
-        with:
-          github-repo: thebrowsercompany/swift-build
-          release-asset-name: installer-amd64.exe
-          release-tag-name: 20231010.3
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          swift-version: ${{ env.swift-version }}
 
       - name: Build and Test (${{ matrix.configuration }})
         run: >
