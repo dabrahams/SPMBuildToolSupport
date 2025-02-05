@@ -9,7 +9,7 @@ struct CmdPlugin: SPMBuildToolPlugin {
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target
   ) throws -> [SPMBuildCommand] {
 
-    let outputFile = context.pluginWorkDirectory/"CommandOutput.swift"
+    let outputFile = context.pluginWorkDirectoryURL/"CommandOutput.swift"
 
     let shell = osIsWindows ? "cmd" : "sh"
     let arguments = (osIsWindows ? [ "/Q", "/C"] : ["-c"])
