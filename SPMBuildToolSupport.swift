@@ -159,7 +159,18 @@ extension URL {
 
   /// The representation used by the native filesystem.
   public var platformString: String {
-    self.withUnsafeFileSystemRepresentation { String(cString: $0!) }
+    let s = self.withUnsafeFileSystemRepresentation { String(cString: $0!) }
+
+    return s.withCString(encodedAs: UTF16.self) { pwszPath in
+      // Allocate a buffer for the repaired UTF-16.
+      let bufferSize = Int(GetFullPathNameW(pwszPath, 0, nil, nil))
+      var buffer = Array<UTF16.CodeUnit>(repeating: 0, count: bufferSize)
+      // Actually do the repair
+      _ = GetFullPathNameW(pwszPath, DWORD(bufferSize), &buffer, nil)
+      // Drop the zero terminator and convert back to a Swift string.
+      return String(decoding: buffer.dropLast(), as: UTF16.self)
+    }
+
   }
 
 }
