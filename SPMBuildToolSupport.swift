@@ -14,10 +14,10 @@ let osIsMacOS = true
 let osIsMacOS = false
 #endif
 
-let fileManager = FileManager.default
+var fileManager: FileManager { FileManager.default }
 
 /// The separator between elements of the executable search path.
-private var pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
+private let pathEnvironmentSeparator: Character = osIsWindows ? ";" : ":"
 
 /// The environment variables of the running process.
 ///
@@ -61,15 +61,22 @@ public extension Path {
 extension PackagePlugin.PluginContext {
 
   func makeScratchDirectory() throws -> URL {
+    var d: URL!
+    var e: Error!
     for _ in 0..<10 {
       do {
-        let d = pluginWorkDirectory.url/UUID().uuidString
+        d = pluginWorkDirectory.url/UUID().uuidString
         try fileManager.createDirectory(at: d, withIntermediateDirectories: false)
         return d
       }
-      catch {}
+      catch let e1 { e = e1 }
     }
-    throw Failure(description: "couldn't create scratch directory after 10 tries.")
+    throw Failure(
+      description: """
+        Couldn't create scratch directory after 10 tries
+          last attempt at: \(d.absoluteString)
+          error: \(e)
+        """)
   }
 
   /// Returns the binary executable file that would be invoked as `command` from the command line if
@@ -131,7 +138,11 @@ extension PackagePlugin.PluginContext {
             .compactMap({ $0.sansPathComponentSuffix(pluginAPISuffix) })
             .first(where: { (try? executable(invokedAs: "swift", searching: [$0/"bin"])) != nil })
     else {
-      throw Failure(description: "Could not locate Swift toolchain bin directory in path.")
+      throw Failure(
+        description: """
+          Could not locate Swift toolchain bin directory in path:
+          \(executableSearchPath.map(\.absoluteString))
+          """)
     }
 
     return toolchain/"bin"

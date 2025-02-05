@@ -1,4 +1,4 @@
 import Foundation
-import LibWithResourceGeneratedByLocalTarget
+import LibWithRsrcFromLocalTgt
 
 print(resourcesGeneratedByLocalTarget.path(forResource: "Test1.out", ofType: nil) ?? "** Not Found **")

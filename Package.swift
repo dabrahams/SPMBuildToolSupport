@@ -1,9 +1,9 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 6.0.3
 
 import PackageDescription
 
 // Define a constant to clean up dependency management for SPM bug workarounds (see
-// LocalTargetCommandDemoPlugin below).  Swift only allows conditional compilation at statement
+// CmdTgtPlugin below).  Swift only allows conditional compilation at statement
 // granularity so that becomes very inconvenient otherwise.
 #if os(Windows)
 let onWindows = true
@@ -14,97 +14,97 @@ let onWindows = false
 let package = Package(
   name: "SPMBuildToolSupport",
   products: onWindows
-    ? [ .executable(name: "GenerateResource", targets: ["GenerateResource"]) ]
+    ? [ .executable(name: "GenRsrc", targets: ["GenRsrc"]) ]
     : [],
 
   targets: [
     // ----------------- Demonstrates a plugin running an executable target --------------
 
-    // This plugin causes an invocation of the executable GenerateResource target below.
+    // This plugin causes an invocation of the executable GenRsrc target below.
     .plugin(
-      name: "LocalTargetCommandDemoPlugin", capability: .buildTool(),
+      name: "CmdTgtPlugin", capability: .buildTool(),
       // On Windows the plugin cannot have a dependency on the tool, or building tests that depend
       // (transitively) on the output of the plugin fail to build with link errors about duplicate
       // main functions
       // (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716).  On
       // other platforms the plugin _must_ have a dependency on the tool.
-      dependencies: onWindows ? [] : ["GenerateResource"]
+      dependencies: onWindows ? [] : ["GenRsrc"]
     ),
 
     // The executable target run by the above plugin
-    .executableTarget(name: "GenerateResource"),
+    .executableTarget(name: "GenRsrc"),
 
     // The target into whose resource bundle which the result is copied
     .target(
-      name: "LibWithResourceGeneratedByLocalTarget",
+      name: "LibWithRsrcFromLocalTgt",
       // If we don't exclude these, we can use
       //   (target as! SourceModuleTarget).sourceFiles(withSuffix: ".in")
       // to find them, but we will get (incorrect) warnings from SPM about unhandled sources.
-      // See LocalTargetCommandDemoPlugin.swift for how to deal with them instead.
+      // See CmdTgtPlugin.swift for how to deal with them instead.
       exclude: ["BuildToolPluginInputs"],
-      plugins: ["LocalTargetCommandDemoPlugin"]
+      plugins: ["CmdTgtPlugin"]
     ),
 
     // An app that uses the resources in the above library
     .executableTarget(
-      name: "AppWithResource", dependencies: ["LibWithResourceGeneratedByLocalTarget"]),
+      name: "AppWithResource", dependencies: ["LibWithRsrcFromLocalTgt"]),
 
     // ------ Demonstrates a plugin running an executable file with a known path ------
 
     // This plugin invokes one of the scripts in the DemoScripts/ directory.
     .plugin(
-      name: "ExecutableFileDemoPlugin", capability: .buildTool()
+      name: "ExecutablePlugin", capability: .buildTool()
     ),
 
     // The target into which the resulting source files are incorporated.
     .target(
-      name: "LibWithSourceGeneratedByExecutableFile",
-      plugins: ["ExecutableFileDemoPlugin"]
+      name: "LibWithSrcFromExecutable",
+      plugins: ["ExecutablePlugin"]
     ),
 
     // ------ Demonstrates a plugin running a command by name as if in a shell ------
 
     // This plugin invokes one of the scripts in the DemoScripts/ directory.
     .plugin(
-      name: "CommandDemoPlugin", capability: .buildTool()
+      name: "CmdPlugin", capability: .buildTool()
     ),
 
     // The target into which the resulting source files are incorporated.
     .target(
-      name: "LibWithSourceGeneratedByCommand",
-      plugins: ["CommandDemoPlugin"]
+      name: "LibWithSrcFromCmd",
+      plugins: ["CmdPlugin"]
     ),
 
     // ------ Demonstrates a plugin running a single-file Swift script ------
 
     // This plugin invokes one of the scripts in the DemoScripts/ directory.
     .plugin(
-      name: "SwiftScriptDemoPlugin", capability: .buildTool()),
+      name: "SwiftScriptPlugin", capability: .buildTool()),
 
     // The target into which the resulting source files are incorporated.
     .target(
-      name: "LibWithSourceGeneratedBySwiftScript",
-      plugins: ["SwiftScriptDemoPlugin"]
+      name: "LibWithSrcFromSwiftScript",
+      plugins: ["SwiftScriptPlugin"]
     ),
 
     // ----------------- Demonstrates a plugin running a tool from the Swift toolchain --------------
 
     // This plugin causes an invocation of the `swiftc` tool
     .plugin(
-      name: "SwiftToolchainCommandDemoPlugin", capability: .buildTool()
+      name: "SwiftToolchainCmdPlugin", capability: .buildTool()
     ),
 
     // The target into whose resource bundle which the result is copied
     .target(
-      name: "LibWithResourceGeneratedBySwiftToolchainCommand",
-      plugins: ["SwiftToolchainCommandDemoPlugin"]
+      name: "LibWithRsrcFromToolCmd",
+      plugins: ["SwiftToolchainCmdPlugin"]
     ),
 
     // ----------------- Tests that prove this all works. --------------
 
     .testTarget(
       name: "SPMBuildToolSupportTests",
-      dependencies: ["LibWithResourceGeneratedByLocalTarget", "LibWithResourceGeneratedBySwiftToolchainCommand"]
+      dependencies: ["LibWithRsrcFromLocalTgt", "LibWithRsrcFromToolCmd"]
     ),
 
   ]
