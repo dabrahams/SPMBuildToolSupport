@@ -4,7 +4,7 @@ import PackagePlugin
 /// A plugin that generates Swift source by running an executable file with a known path in the
 /// filesystem.
 @main
-struct ExecutableFileDemoPlugin: SPMBuildToolPlugin {
+struct ExecutablePlugin: SPMBuildToolPlugin {
 
   func buildCommands(
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target

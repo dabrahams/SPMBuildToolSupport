@@ -70,7 +70,7 @@ This is just a partial list:
    [exclude them from the
    target](https://github.com/dabrahams/SPMBuildToolSupport/blob/48d0253/Package.swift#L45) in
    `Package.swift` and in your plugin, locate them relative to other directories in your
-   project. [`LocalTargetCommandDemoPlugin.swift`](https://github.com/dabrahams/SPMBuildToolSupport/blob/48d0253/Plugins/LocalTargetCommandDemoPlugin/LocalTargetCommandDemoPlugin.swift#L11-L14)
+   project. [`CmdTgtPlugin.swift`](https://github.com/dabrahams/SPMBuildToolSupport/blob/48d0253/Plugins/CmdTgtPlugin/CmdTgtPlugin.swift#L11-L14)
    shows an example.
 
 7. **On Windows**:

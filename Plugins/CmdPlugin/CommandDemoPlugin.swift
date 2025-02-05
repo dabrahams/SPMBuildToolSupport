@@ -3,7 +3,7 @@ import PackagePlugin
 
 /// A plugin that generates Swift source by running a command by name as if in a shell.
 @main
-struct CommandDemoPlugin: SPMBuildToolPlugin {
+struct CmdPlugin: SPMBuildToolPlugin {
 
   func buildCommands(
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target

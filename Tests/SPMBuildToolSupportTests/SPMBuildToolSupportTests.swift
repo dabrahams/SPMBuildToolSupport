@@ -1,6 +1,6 @@
 import XCTest
-import LibWithResourceGeneratedByLocalTarget
-import LibWithResourceGeneratedBySwiftToolchainCommand
+import LibWithRsrcFromLocalTgt
+import LibWithRsrcFromToolCmd
 import Foundation
 
 final class SPMBuildToolSupportTests: XCTestCase {

@@ -2,7 +2,7 @@ import Foundation
 import PackagePlugin
 
 @main
-struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
+struct CmdTgtPlugin: SPMBuildToolPlugin {
 
   func buildCommands(
     context: PackagePlugin.PluginContext, target: PackagePlugin.Target
@@ -26,8 +26,8 @@ struct LocalTargetCommandDemoPlugin: SPMBuildToolPlugin {
 
     return [
       .buildCommand(
-        displayName: "Running GenerateResource",
-        executable: .targetInThisPackage("GenerateResource"),
+        displayName: "Running GenRsrc",
+        executable: .targetInThisPackage("GenRsrc"),
         // Note the use of `.platformString` on these paths rather
         // than `.string`.  Your executable tool may have trouble
         // finding files and directories with `.string`.
