@@ -28,7 +28,7 @@ let package = Package(
       // main functions
       // (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716).  On
       // other platforms the plugin _must_ have a dependency on the tool.
-      dependencies: onWindows ? [] : ["GenRsrc"]
+      dependencies: ["GenRsrc"]
     ),
 
     // The executable target run by the above plugin
