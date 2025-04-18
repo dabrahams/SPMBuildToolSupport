@@ -72,12 +72,3 @@ This is just a partial list:
    `Package.swift` and in your plugin, locate them relative to other directories in your
    project. [`CmdTgtPlugin.swift`](https://github.com/dabrahams/SPMBuildToolSupport/blob/48d0253/Plugins/CmdTgtPlugin/CmdTgtPlugin.swift#L11-L14)
    shows an example.
-
-7. **On Windows**:
-   - In `Package.swift`, [omit executable targets in your package](https://github.com/dabrahams/SPMBuildToolSupport/blob/150f67fc2c08d1f13c143c9e2c31e4c9070b09a6/Package.swift#L31) from the list of your build tool's
-     dependencies.
-   - To speed up builds when using `.targetInThisPackage(name:)`:
-	 1. Make sure all the targets omitted above have [a corresponding `.product` of the same name](https://github.com/dabrahams/SPMBuildToolSupport/blob/150f67fc2c08d1f13c143c9e2c31e4c9070b09a6/Package.swift#L17) in your package.
-	 2. [set `SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD=1`](https://github.com/dabrahams/SPMBuildToolSupport/blob/150f67fc2c08d1f13c143c9e2c31e4c9070b09a6/.github/workflows/build-and-test.yml#L92) in your environment
-	 3. Build those products in a [separate build step](https://github.com/dabrahams/SPMBuildToolSupport/blob/150f67fc2c08d1f13c143c9e2c31e4c9070b09a6/.github/workflows/build-and-test.yml#L93) *before* [building anything that depends on the build tools](https://github.com/dabrahams/SPMBuildToolSupport/blob/150f67fc2c08d1f13c143c9e2c31e4c9070b09a6/.github/workflows/build-and-test.yml#L94) that use them.
-
