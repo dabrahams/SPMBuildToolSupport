@@ -88,7 +88,13 @@ let package = Package(
 
     .testTarget(
       name: "SPMBuildToolSupportTests",
-      dependencies: ["LibWithRsrcFromLocalTgt", "LibWithRsrcFromToolCmd"]
+      dependencies: [
+        "LibWithRsrcFromLocalTgt",
+        "LibWithRsrcFromToolCmd",
+        "LibWithSrcFromCmd",
+        "LibWithSrcFromExecutable",
+        "LibWithSrcFromSwiftScript",
+      ]
     ),
 
   ]
