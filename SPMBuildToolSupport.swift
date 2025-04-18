@@ -308,46 +308,7 @@ private extension SPMBuildCommand.Executable {
       return .init(executable: p, argumentPrefix: [])
 
     case .targetInThisPackage(let targetName):
-      if !osIsWindows {
-        return try .init(executable: context.tool(named: targetName).url)
-      }
-
-      // Instead of depending on context.tool(named:), which demands a declared dependency on the
-      // tool, which causes link errors on Windows
-      // (https://github.com/apple/swift-package-manager/issues/6859#issuecomment-1720371716),
-      // Invoke swift reentrantly to run the tool.
-
-      let noReentrantBuild
-        = environmentVariables["SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD"] != nil
-      let packageDirectory = context.package.directoryURL
-
-      // Locate the scratch directory for reentrant builds inside the package directory to work
-      // around SPM's broken Windows path handling
-      let conditionalOptions = noReentrantBuild
-        ? [ "--skip-build" ]
-        : [
-          "--scratch-path",
-          (packageDirectory / ".build" / UUID().uuidString).platformString
-        ]
-
-      return .init(
-        executable: try context.swiftToolchainExecutable(invokedAs: "swift"),
-        argumentPrefix: [
-          "run",
-          // Only Macs currently use sandboxing, but nested sandboxes are prohibited, so for future
-          // resilience in case Windows gets a sandbox, disable it on these reentrant builds.
-          //
-          // Currently if we run this code on a Mac, disabling the sandbox on this inner build is
-          // enough to allow us to write on the scratchPath, which is outside any _outer_ sandbox.
-          // I think that's an SPM bug. If they fix it, we'll need to nest scratchPath in
-          // context.workDirectory and add an explicit build step to delete it to keep its contents
-          // from being incorporated into the resources of the target we're building.
-          "--disable-sandbox",
-          "--package-path", packageDirectory.platformString]
-          + conditionalOptions
-          + [ targetName ],
-        additionalSources:
-          Array(context.package.sourceDependencies(ofTargetsNamed: targetName)))
+      return try .init(executable: context.tool(named: targetName).url)
 
     case .command(let c):
       return try .init(
