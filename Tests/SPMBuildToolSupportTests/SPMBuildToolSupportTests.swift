@@ -1,6 +1,10 @@
 import XCTest
 import LibWithRsrcFromLocalTgt
 import LibWithRsrcFromToolCmd
+import LibWithSrcFromCmd
+import LibWithSrcFromExecutable
+import LibWithSrcFromSwiftScript
+
 import Foundation
 
 final class SPMBuildToolSupportTests: XCTestCase {
@@ -33,4 +37,15 @@ final class SPMBuildToolSupportTests: XCTestCase {
     XCTAssert(preprocessedSource.contains("int main() { return 0; }"), "Expected content not found")
   }
 
+  func testCmdPlugin() {
+    XCTAssertEqual(dependentOnCommandOutput, 1)
+  }
+
+  func testExecutablePlugin() {
+    XCTAssertEqual(dependentOnExecutableOutput, 1)
+  }
+
+  func testSwiftScriptPlugin() {
+    XCTAssertEqual(dependentOnSwiftScriptOutput, 1)
+  }
 }
