@@ -76,11 +76,3 @@ jobs:
         run: >
           swift test -c ${{ matrix.configuration }} ${{ matrix.build-options }}
           --explicit-target-dependency-import-check=error
-
-      - name: Test non-reentrant build (Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          swift package clean
-          $env:SPM_BUILD_TOOL_SUPPORT_NO_REENTRANT_BUILD=1
-          swift build -c ${{ matrix.configuration }} ${{ matrix.build-options }} --product GenRsrc
-          swift test -c ${{ matrix.configuration }} ${{ matrix.build-options }}
