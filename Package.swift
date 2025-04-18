@@ -2,20 +2,9 @@
 
 import PackageDescription
 
-// Define a constant to clean up dependency management for SPM bug workarounds (see
-// CmdTgtPlugin below).  Swift only allows conditional compilation at statement
-// granularity so that becomes very inconvenient otherwise.
-#if os(Windows)
-let onWindows = true
-#else
-let onWindows = false
-#endif
-
 let package = Package(
   name: "SPMBuildToolSupport",
-  products: onWindows
-    ? [ .executable(name: "GenRsrc", targets: ["GenRsrc"]) ]
-    : [],
+  products: [],
 
   targets: [
     // ----------------- Demonstrates a plugin running an executable target --------------
