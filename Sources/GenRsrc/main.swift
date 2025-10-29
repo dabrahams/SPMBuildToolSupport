@@ -1,7 +1,7 @@
 import Foundation
 
 // Log our invocation for diagnostic purposes
-print("GenerateResource invocation:",  CommandLine.arguments)
+print("GenRsrc invocation:",  CommandLine.arguments)
 
 // The ".in" files to be used to generate the resource files.
 let inputs = CommandLine.arguments.dropFirst().dropLast().map(URL.init(fileURLWithPath:))
