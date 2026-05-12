@@ -235,8 +235,7 @@ private extension SPMBuildCommand.Executable {
     init(
       executable: URL,
       argumentPrefix: [String] = [],
-      additionalSources: [URL] = [],
-      additionalCommands: [SPMBuildCommand] = []
+      additionalSources: [URL] = []
     )
     {
       self.executable = executable
