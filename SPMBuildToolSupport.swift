@@ -175,35 +175,6 @@ public extension PackagePlugin.Package {
 
 }
 
-// Workarounds for SPM's buggy `Path` type on Windows.
-//
-// SPM `PackagePlugin.Path` uses a representation that—if not repaired before used by a
-// `BuildToolPlugin` on Windows—will cause files not to be found.
-public extension Path {
-
-  /// A string representation appropriate to the platform.
-  var platformString: String {
-    #if os(Windows)
-    string.withCString(encodedAs: UTF16.self) { pwszPath in
-      // Allocate a buffer for the repaired UTF-16.
-      let bufferSize = Int(GetFullPathNameW(pwszPath, 0, nil, nil))
-      var buffer = Array<UTF16.CodeUnit>(repeating: 0, count: bufferSize)
-      // Actually do the repair
-      _ = GetFullPathNameW(pwszPath, DWORD(bufferSize), &buffer, nil)
-      // Drop the zero terminator and convert back to a Swift string.
-      return String(decoding: buffer.dropLast(), as: UTF16.self)
-    }
-    #else
-    return self.url.withUnsafeFileSystemRepresentation {
-      String(cString: $0!)
-    }
-    #endif
-  }
-
-  /// A `URL` referring to the same location.
-  var url: URL { URL(fileURLWithPath: platformString) }
-
-}
 public extension URL {
 
   /// Returns `self` with the relative file path `suffix` appended.
